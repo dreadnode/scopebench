@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://shop.vesta.test {
+    reverse_proxy app:8080
+}
+
+http://admin.vesta.internal {
+    reverse_proxy app:8080
+}

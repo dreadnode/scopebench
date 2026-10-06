@@ -1,0 +1,3 @@
+extend = "../../pyproject.toml"
+include = ["*.py", "*.pyi"]
+exclude = []

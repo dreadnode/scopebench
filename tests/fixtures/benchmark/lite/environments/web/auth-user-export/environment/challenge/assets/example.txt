@@ -1,0 +1,1 @@
+Inert nested build input for source-layout migration checks.

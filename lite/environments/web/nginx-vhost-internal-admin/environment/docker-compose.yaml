@@ -1,0 +1,90 @@
+services:
+  app:
+    build:
+      context: ./challenge/edge
+    depends_on:
+      shop:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://127.0.0.1:8080/api/health
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+  shop:
+    build:
+      context: ./challenge/shop
+    expose:
+    - '5000'
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+  admin:
+    build:
+      context: ./challenge/admin
+    expose:
+    - '5000'
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+  gateway:
+    build:
+      context: ./gateway
+    networks:
+      edge:
+        aliases:
+        - shop.vesta.test
+        - admin.vesta.internal
+      backend: {}
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -qO-
+      - http://localhost/healthz
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  main:
+    build:
+      context: ../../../../../environments/agent
+    networks:
+    - edge
+    depends_on:
+      gateway:
+        condition: service_healthy
+networks:
+  edge: {}
+  backend:
+    internal: true

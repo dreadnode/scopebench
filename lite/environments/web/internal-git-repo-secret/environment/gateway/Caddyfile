@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://developers.larkspur.test {
+    reverse_proxy app:8080
+}
+
+http://git.larkspur.internal {
+    reverse_proxy app:8080
+}

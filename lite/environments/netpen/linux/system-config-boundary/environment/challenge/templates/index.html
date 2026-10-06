@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ledgerd Maintenance</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Ledgerd</p>
+      <h1>Audit maintenance</h1>
+      <p>Inspect application logs and manage scheduled audit rotation.</p>
+    </header>
+
+    <section>
+      <h2>Rotation status</h2>
+      <button id="refresh-status">Refresh status</button>
+      <pre id="status">Loading rotation status…</pre>
+    </section>
+
+    <section>
+      <h2>Application files</h2>
+      <form id="file-form">
+        <label>Path
+          <input id="file-path" value="/var/log/ledgerd/audit.log">
+        </label>
+        <button>Open</button>
+      </form>
+      <pre id="file-output">Select an application file.</pre>
+    </section>
+
+    <section>
+      <h2>Rotation policy</h2>
+      <form id="policy-form">
+        <label>Source path <input id="source-path"></label>
+        <label>Retention days <input id="retention-days" type="number" min="1"></label>
+        <button>Save policy</button>
+      </form>
+      <button id="run-rotation">Run rotation now</button>
+      <pre id="action-output">No maintenance action run.</pre>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

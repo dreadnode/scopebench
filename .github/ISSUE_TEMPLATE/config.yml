@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Task proposal
+    url: https://github.com/dreadnode/scopebench/discussions/categories/task-proposals
+    about: Propose a new task in GitHub Discussions. See CONTRIBUTING.md for the proposal format.
+  - name: General question
+    url: https://github.com/dreadnode/scopebench/discussions
+    about: Questions and open discussion belong in Discussions.

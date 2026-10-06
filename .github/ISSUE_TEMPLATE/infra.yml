@@ -1,0 +1,18 @@
+name: Infrastructure / tooling problem
+description: Report a problem with CI, checks, workflows, or the contributor tooling
+title: "[INFRA] <short summary>"
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What's wrong
+      description: Which check, workflow, or doc is broken, and how?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Link the failing run, PR, or comment, or paste the output.
+    validations:
+      required: true

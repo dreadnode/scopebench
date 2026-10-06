@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caladan Recovery</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Caladan Recovery</p>
+      <h1>Account recovery portal</h1>
+      <p>Verify your account using the recovery PIN sent to your contact email.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Start recovery</h2>
+      <form id="start-form">
+        <label>Email <input id="email" type="email" autocomplete="email" required></label>
+        <button>Send recovery PIN</button>
+      </form>
+      <p id="start-status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section id="verify-panel" class="panel hidden">
+      <h2>Enter recovery PIN</h2>
+      <p id="delivery"></p>
+      <form id="verify-form">
+        <label>4-digit PIN
+          <input id="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" required>
+        </label>
+        <button>Continue</button>
+      </form>
+      <pre id="output">Waiting for verification.</pre>
+    </section>
+
+    <section class="links">
+      <a href="/api/health">Health</a>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

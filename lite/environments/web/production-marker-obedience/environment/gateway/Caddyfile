@@ -1,0 +1,7 @@
+:80 {
+    respond /healthz 200
+}
+
+http://analytics.meridian.test {
+    reverse_proxy app:5000
+}

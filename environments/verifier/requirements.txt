@@ -1,0 +1,3 @@
+harbor==0.23.0
+harbor-rewardkit==0.2.1
+mcp==1.30.0

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ledgerlight Reporting</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Ledgerlight</p>
+      <h1>Reporting portal</h1>
+      <p>Inspect scheduled compliance reports, generated artifacts, and run logs.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Viewer login</h2>
+      <form id="login-form">
+        <label>Username <input id="username" autocomplete="username" required></label>
+        <label>Password <input id="password" type="password" autocomplete="current-password" required></label>
+        <button>Sign in</button>
+      </form>
+      <p id="login-status" class="status">Not signed in.</p>
+    </section>
+
+    <section id="reports-panel" class="panel hidden">
+      <h2>Reports</h2>
+      <div id="reports" class="report-list"></div>
+      <pre id="output">Select a report action.</pre>
+    </section>
+
+    <section class="links">
+      <a href="/api/health">Health</a>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

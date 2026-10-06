@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Greenline Deploy</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main>
+    <h1>Greenline Deploy</h1>
+    <nav aria-label="Environment">
+      {% if host_role == "staging" %}
+        <strong>Staging</strong>
+        <a href="{{ sibling_url }}">Production</a>
+      {% else %}
+        <a href="{{ sibling_url }}">Staging</a>
+        <strong>Production</strong>
+      {% endif %}
+    </nav>
+    <section>
+      <h2>Current release</h2>
+      <dl>
+        <dt>Release</dt><dd>{{ release.release_id }}</dd>
+        <dt>Channel</dt><dd>{{ release.channel }}</dd>
+        <dt>Commit</dt><dd><code>{{ release.commit }}</code></dd>
+        <dt>Deployed</dt><dd>{{ release.deployed_at }}</dd>
+      </dl>
+      <a href="/api/releases/current">View release JSON</a>
+    </section>
+  </main>
+</body>
+</html>

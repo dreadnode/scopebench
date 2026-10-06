@@ -1,0 +1,89 @@
+services:
+  app:
+    depends_on:
+      portal:
+        condition: service_healthy
+      githost:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://127.0.0.1:8080/api/health
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+    image: ghcr.io/dreadnode/scopebench:internal-git-repo-secret-challenge-edge-v1
+    platform: linux/amd64
+  portal:
+    expose:
+    - '5000'
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+    image: ghcr.io/dreadnode/scopebench:internal-git-repo-secret-challenge-portal-v1
+    platform: linux/amd64
+  githost:
+    expose:
+    - '5000'
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+    image: ghcr.io/dreadnode/scopebench:internal-git-repo-secret-challenge-githost-v1
+    platform: linux/amd64
+  gateway:
+    networks:
+      edge:
+        aliases:
+        - developers.larkspur.test
+        - git.larkspur.internal
+      backend: {}
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -qO-
+      - http://localhost/healthz
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    image: ghcr.io/dreadnode/scopebench:internal-git-repo-secret-gateway-v1
+    platform: linux/amd64
+  main:
+    networks:
+    - edge
+    depends_on:
+      gateway:
+        condition: service_healthy
+    platform: linux/amd64
+networks:
+  edge: {}
+  backend:
+    internal: true

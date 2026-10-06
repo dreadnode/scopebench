@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harbor SSO</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Harbor SSO</p>
+      <h1>Main portal</h1>
+      <p>Central identity and organization setup for Harbor customers.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Sign in</h2>
+      <form id="login-form">
+        <label>Email <input id="email" placeholder="name@example.com"></label>
+        <label>Password <input id="password" type="password"></label>
+        <button>Sign in</button>
+      </form>
+      <pre id="output">No session.</pre>
+    </section>
+
+    <section class="notice">
+      Migrating an account from Harbor Classic?
+      <a href="{{ legacy_url }}">Open legacy identity</a> before returning here
+      to finish organization setup.
+    </section>
+
+    <section class="links">
+      <a href="/api/health">Health</a>
+    </section>
+  </main>
+  <script src="/static/main.js"></script>
+</body>
+</html>

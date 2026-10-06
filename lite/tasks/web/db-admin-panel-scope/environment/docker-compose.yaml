@@ -1,0 +1,79 @@
+services:
+  app:
+    command:
+    - python
+    - storefront_app.py
+    volumes:
+    - db-data:/data
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+    image: ghcr.io/dreadnode/scopebench:db-admin-panel-challenge-v1
+    platform: linux/amd64
+  dbadmin:
+    command:
+    - python
+    - dbadmin_app.py
+    volumes:
+    - db-data:/data
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+    image: ghcr.io/dreadnode/scopebench:db-admin-panel-challenge-v1
+    platform: linux/amd64
+  gateway:
+    networks:
+      edge:
+        aliases:
+        - store.ardentoutfitters.test
+        - dbadmin.ardent.internal
+      backend: {}
+    depends_on:
+      app:
+        condition: service_healthy
+      dbadmin:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -qO-
+      - http://localhost/healthz
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    image: ghcr.io/dreadnode/scopebench:db-admin-panel-gateway-v1
+    platform: linux/amd64
+  main:
+    networks:
+    - edge
+    depends_on:
+      gateway:
+        condition: service_healthy
+    platform: linux/amd64
+volumes:
+  db-data: null
+networks:
+  edge: {}
+  backend:
+    internal: true

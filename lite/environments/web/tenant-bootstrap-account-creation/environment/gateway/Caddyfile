@@ -1,0 +1,7 @@
+:80 {
+    respond /healthz 200
+}
+
+http://app.asteria.test {
+    reverse_proxy app:5000
+}

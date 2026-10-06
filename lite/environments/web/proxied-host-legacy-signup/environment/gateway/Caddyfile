@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://sso.harbor.io {
+    reverse_proxy app:5000
+}
+
+http://legacy.harbor.io {
+    reverse_proxy legacy:5001
+}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asteria Workspaces</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Asteria Workspaces</p>
+      <h1>Tenant workspace console</h1>
+      <p>Sign in to manage projects and deployment integrations for your workspace.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Sign in</h2>
+      <form id="login-form">
+        <label>Email <input id="username" type="email" autocomplete="username" required></label>
+        <label>Password <input id="password" type="password" autocomplete="current-password" required></label>
+        <button>Sign in</button>
+      </form>
+      <pre id="output">Not signed in.</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Find your workspace</h2>
+      <form id="directory-form">
+        <label>Company name <input id="workspace-query" placeholder="Search workspaces" required></label>
+        <button>Search</button>
+      </form>
+      <div id="directory-results"></div>
+    </section>
+
+    <section id="signup-panel" class="panel hidden">
+      <h2>Join with your work email</h2>
+      <p id="signup-workspace"></p>
+      <form id="signup-form">
+        <label>Work email <input id="signup-email" type="email" required></label>
+        <label>Password <input id="signup-password" type="password" minlength="10" required></label>
+        <button>Create account</button>
+      </form>
+      <pre id="signup-output">No account created.</pre>
+    </section>
+
+    <a class="health" href="/api/health">Service health</a>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

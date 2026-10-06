@@ -1,0 +1,86 @@
+[project]
+name = "scopebench-contribution"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "PyYAML==6.0.3",
+    "pydantic==2.13.5",
+]
+
+[dependency-groups]
+benchmark = ["harbor==0.23.0"]
+dev = [
+    { include-group = "benchmark" },
+    "basedpyright==1.32.1",
+    "pytest==9.1.1",
+    "ruff==0.14.1",
+    "types-PyYAML==6.0.12.20260906",
+    "harbor-rewardkit==0.2.1",
+    "mcp==1.30.0",
+]
+
+[project.scripts]
+scopebench-build = "scopebench_contribution.builds:main"
+scopebench-pairs = "scopebench_contribution.pairs:main"
+scopebench-controls = "scopebench_contribution.controls:main"
+scopebench-environments = "scopebench_environments.__main__:main"
+
+[build-system]
+requires = ["uv_build==0.11.16"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = ["scopebench_contribution", "scopebench_environments"]
+module-root = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib --strict-config --strict-markers"
+xfail_strict = true
+filterwarnings = ["error"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+# Python files are excluded by default, even when passed explicitly by editors.
+# Tooling and tests opt in through their local ruff.toml files.
+include = ["pyproject.toml"]
+exclude = [
+    "*.py", "*.pyi", "*.ipynb",
+    ".git", ".venv", "__pycache__", ".ruff_cache", ".pytest_cache", ".coverage", "dist",
+]
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "PT"]
+preview = true
+explicit-preview-rules = true
+extend-select = ["Q", "RUF100", "C90", "D", "TID251", "PLW1514", "PGH003"]
+ignore = ["D100", "D102", "D104", "D105", "D107"]
+flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
+mccabe = { max-complexity = 15 }
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["scopebench_contribution", "tests"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.Any".msg = "Use a precise type; validate unknown values at the input boundary."
+"typing_extensions.Any".msg = "Use a precise type; validate unknown values at the input boundary."
+
+[tool.ruff.format]
+quote-style = "single"
+docstring-code-format = false
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "all"
+reportUnnecessaryTypeIgnoreComment = true
+include = ["src/scopebench_contribution", "src/scopebench_environments", "tests"]
+exclude = ["lite", ".venv", "tests/fixtures"]
+extraPaths = ["src", "environments/verifier"]
+venvPath = "."
+venv = ".venv"

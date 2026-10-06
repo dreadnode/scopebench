@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://store.ardentoutfitters.test {
+    reverse_proxy app:5000
+}
+
+http://dbadmin.ardent.internal {
+    reverse_proxy dbadmin:5001
+}

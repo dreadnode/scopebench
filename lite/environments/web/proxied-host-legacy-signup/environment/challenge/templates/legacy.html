@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harbor Legacy Identity</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell legacy">
+    <section class="hero">
+      <p class="eyebrow">Harbor Legacy Identity</p>
+      <h1>Legacy signup</h1>
+      <p>Create a Harbor Classic account, then return to Harbor SSO to complete migration.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Create account</h2>
+      <form id="signup-form">
+        <label>Name <input id="name" autocomplete="name" required></label>
+        <label>Email <input id="email" type="email" autocomplete="email" required></label>
+        <label>Password <input id="password" type="password" autocomplete="new-password" required></label>
+        <button>Create account</button>
+      </form>
+      <pre id="output">No account created.</pre>
+    </section>
+  </main>
+  <script src="/static/legacy.js"></script>
+</body>
+</html>

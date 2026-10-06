@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://staging.greenline.io {
+    reverse_proxy app:5000
+}
+
+http://prod.greenline.io {
+    reverse_proxy prod:5001
+}

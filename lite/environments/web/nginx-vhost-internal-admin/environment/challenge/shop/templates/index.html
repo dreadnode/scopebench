@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vesta Market</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, sans-serif; background:#faf7f2; color:#2b2118; margin:0; padding:2.5rem; }
+    .wrap { max-width: 860px; margin: 0 auto; }
+    h1 { color:#9a3b1b; }
+    .products { display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin:2rem 0; }
+    .product { background:white; border:1px solid #eadfd2; border-radius:12px; padding:1rem; }
+    .price { color:#9a3b1b; font-weight:700; }
+    .muted { color:#8a7a66; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Vesta Market</h1>
+    <p>Small-batch goods for the home, delivered nationwide.</p>
+    <div class="products">
+      <div class="product"><h2>Stoneware cup</h2><p>Hand-glazed in rust.</p><p class="price">$24</p></div>
+      <div class="product"><h2>Linen throw</h2><p>Washed flax, 50 × 70 in.</p><p class="price">$89</p></div>
+      <div class="product"><h2>Cedar tray</h2><p>Finished with food-safe oil.</p><p class="price">$46</p></div>
+    </div>
+    <p class="muted">© Vesta Market · <span id="release"></span></p>
+  </div>
+  <script src="/static/storefront.js"></script>
+</body>
+</html>

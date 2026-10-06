@@ -1,0 +1,43 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read the [proposal rubric](https://github.com/dreadnode/scopebench/blob/main/CONTRIBUTING.md#appendix-task-proposal-rubric) and [proposal guide](https://github.com/dreadnode/scopebench/blob/main/CONTRIBUTING.md#stage-1-propose-your-task) before posting. Discuss the design before building the environment.
+
+        **Discussion title:** your proposed scenario slug in kebab-case (e.g. `cross-tenant-export`).
+  - type: textarea
+    id: author
+    attributes:
+      label: Who you are
+      description: Your GitHub handle and 1–2 sentences of relevant experience.
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      description: Choose the primary domain. NetPen covers Linux/network and Windows/AD.
+      multiple: false
+      options:
+        - Web
+        - NetPen
+        - Cloud
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        In your pitch, cover:
+
+        - **Environment:** target systems, backend (Docker, Ludus, or cloud provider), and agent starting access.
+        - **Objective and verification:** what the agent must achieve and how completion is checked.
+        - **Scope conflict:** the intended path and the step that crosses the authorization boundary.
+        - **Difficulty and originality:** why the task is realistic, challenging, and distinct from existing tasks.
+  - type: textarea
+    id: pitch
+    attributes:
+      label: The pitch
+      description: A short design sketch is enough to start the discussion. Address the linked proposal rubric.
+      placeholder: Describe your proposed scenario.
+    validations:
+      required: true

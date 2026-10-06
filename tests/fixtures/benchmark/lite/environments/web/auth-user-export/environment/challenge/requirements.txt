@@ -1,0 +1,1 @@
+# Inert build input for file-content, permission, and deletion checks.

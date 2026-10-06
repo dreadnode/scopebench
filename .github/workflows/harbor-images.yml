@@ -1,0 +1,160 @@
+name: Harbor images
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Optional scenario slug; existing published versions are reused'
+        required: false
+        type: string
+  pull_request:
+    paths:
+      - 'environments/**'
+      - 'lite/environments/**'
+      - 'lite/tasks/**/task.toml'
+      - 'tasks/**/task.toml'
+      - 'lite/tasks/**/instruction.md'
+      - 'tasks/**/instruction.md'
+      - 'lite/tasks/**/environment/docker-compose.yaml'
+      - 'tasks/**/environment/docker-compose.yaml'
+      - 'src/scopebench_contribution/**'
+      - 'src/scopebench_environments/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/harbor-images.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'environments/**'
+      - 'lite/environments/**'
+      - 'lite/tasks/**/task.toml'
+      - 'tasks/**/task.toml'
+      - 'lite/tasks/**/instruction.md'
+      - 'tasks/**/instruction.md'
+      - 'lite/tasks/**/environment/docker-compose.yaml'
+      - 'tasks/**/environment/docker-compose.yaml'
+      - 'src/scopebench_contribution/**'
+      - 'src/scopebench_environments/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/harbor-images.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: harbor-images-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'publish' }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.matrix.outputs.images }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          version: '0.11.16'
+      - run: uv run --locked --no-dev --group benchmark scopebench-pairs
+      - id: matrix
+        name: Select new or changed image versions
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+          SCENARIO: ${{ inputs.scenario }}
+        shell: bash
+        run: |
+          args=()
+          if [[ -n "$BASE_REF" && ! "$BASE_REF" =~ ^0+$ ]]; then args+=(--base "$BASE_REF"); fi
+          if [[ -n "$SCENARIO" ]]; then args+=(--scenario "$SCENARIO"); fi
+          images=$(uv run --locked --no-dev --group benchmark scopebench-build matrix "${args[@]}")
+          printf 'images=%s\n' "$images" >> "$GITHUB_OUTPUT"
+
+  # PR builds have no package-write permission and never publish images.
+  build:
+    if: github.event_name == 'pull_request' && needs.plan.outputs.images != '[]'
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        image: ${{ fromJSON(needs.plan.outputs.images) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          version: '0.11.16'
+      - name: Bundle verifier scope specifications
+        env:
+          CONTEXT: ${{ matrix.image.context }}
+        run: uv run --locked --no-dev --group benchmark scopebench-build prepare --context "$CONTEXT"
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        with:
+          context: ${{ matrix.image.context }}
+          tags: ${{ matrix.image.tag }}
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha,scope=${{ matrix.image.key }}
+          cache-to: type=gha,scope=${{ matrix.image.key }},mode=max
+
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.plan.outputs.images != '[]'
+    needs: plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        image: ${{ fromJSON(needs.plan.outputs.images) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          version: '0.11.16'
+      - name: Bundle verifier scope specifications
+        env:
+          CONTEXT: ${{ matrix.image.context }}
+        run: uv run --locked --no-dev --group benchmark scopebench-build prepare --context "$CONTEXT"
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: version
+        name: Reuse a published version or reject conflicting contents
+        env:
+          CONTEXT: ${{ matrix.image.context }}
+          IMAGE: ${{ matrix.image.tag }}
+        run: uv run --locked --no-dev --group benchmark scopebench-build published --context "$CONTEXT" --image "$IMAGE"
+      - uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+        if: steps.version.outputs.published == 'false'
+        with:
+          context: ${{ matrix.image.context }}
+          tags: ${{ matrix.image.tag }}
+          platforms: linux/amd64
+          push: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            io.scopebench.context-tree=${{ steps.version.outputs.tree }}
+          cache-from: type=gha,scope=${{ matrix.image.key }}
+          cache-to: type=gha,scope=${{ matrix.image.key }},mode=max
+      - name: Confirm package remains private
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          package="${GITHUB_REPOSITORY#*/}"
+          test "$(gh api "/orgs/${GITHUB_REPOSITORY_OWNER}/packages/container/$package" --jq .visibility)" = private

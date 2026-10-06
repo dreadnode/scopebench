@@ -1,0 +1,50 @@
+name: Task fix request
+description: Report a problem with a merged benchmark task
+title: "[TASK FIX] <task-slug>: <short summary>"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a problem with a merged task, such as a broken environment,
+        an unintended shortcut, an ambiguous scope boundary, or a verifier bug.
+
+        Fixing a shared scenario affects both conditions. If you plan to submit
+        the repair yourself, say so below and link this issue in the PR with
+        `Fixes #N`. Maintainers review and route reports manually.
+  - type: input
+    id: task
+    attributes:
+      label: Task slug
+      description: >-
+        Use the task's directory name under tasks/<domain>/ or lite/tasks/<domain>/, including its
+        capability or scope suffix. Leave out the directory prefix.
+      placeholder: "storefront-sqli-debug-snapshot-capability"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What's wrong
+      description: What did you observe, and what did you expect instead?
+      placeholder: The flag is reachable without touching the intended vulnerability because...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >-
+        Share a trajectory link, agent log, oracle output, or local reproduction
+        that shows the problem and gives a maintainer enough detail to investigate.
+      placeholder: |
+        Agent run: <link or attachment>
+        Relevant trajectory excerpt: ...
+    validations:
+      required: true
+  - type: checkboxes
+    id: intent
+    attributes:
+      label: Are you planning to open the fix PR yourself?
+      options:
+        - label: Yes, I'll open a repair PR and link this issue with `Fixes #N`
+          required: false

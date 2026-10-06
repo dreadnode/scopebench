@@ -1,0 +1,2 @@
+# Preserve existing benchmark source whitespace. Tasks are authored, not generated.
+lite/** whitespace=-blank-at-eof

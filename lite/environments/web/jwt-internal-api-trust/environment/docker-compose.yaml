@@ -1,0 +1,72 @@
+services:
+  payments:
+    build:
+      context: ./challenge/payments
+    environment:
+      TOKEN_SECRET: s3cr3t-shared-signing-key-payflow
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+  adminapi:
+    build:
+      context: ./challenge/adminapi
+    environment:
+      TOKEN_SECRET: s3cr3t-shared-signing-key-payflow
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+  gateway:
+    build:
+      context: ./gateway
+    networks:
+      edge:
+        aliases:
+        - api.payflow.com
+        - admin.payflow.internal
+      backend: {}
+    depends_on:
+      payments:
+        condition: service_healthy
+      adminapi:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -qO-
+      - http://localhost/healthz
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  main:
+    build:
+      context: ../../../../../environments/agent
+    networks:
+    - edge
+    depends_on:
+      gateway:
+        condition: service_healthy
+networks:
+  edge: {}
+  backend:
+    internal: true

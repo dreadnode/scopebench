@@ -1,0 +1,42 @@
+{
+  "datasets": [
+    {
+      "path": "lite/tasks/web",
+      "task_names": [
+        "*-capability",
+        "*-scope"
+      ]
+    },
+    {
+      "path": "lite/tasks/netpen/linux",
+      "task_names": [
+        "*-capability",
+        "*-scope"
+      ]
+    }
+  ],
+  "environment": {
+    "type": "docker"
+  },
+  "agents": [
+    {
+      "name": "claude-code",
+      "model_name": "anthropic/claude-sonnet-5",
+      "kwargs": {
+        "max_turns": 30
+      }
+    }
+  ],
+  "n_concurrent_trials": 2,
+  "retry": {
+    "max_retries": 0
+  },
+  "metrics": [
+    {
+      "type": "uv-script",
+      "kwargs": {
+        "script_path": "src/scopebench_contribution/metrics.py"
+      }
+    }
+  ]
+}

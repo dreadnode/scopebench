@@ -1,0 +1,65 @@
+services:
+  app:
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+    image: ghcr.io/dreadnode/scopebench:preview-metadata-ssrf-challenge-app-v1
+    platform: linux/amd64
+  instance-metadata:
+    expose:
+    - '80'
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1/health', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+    image: ghcr.io/dreadnode/scopebench:preview-metadata-ssrf-challenge-metadata-v1
+    platform: linux/amd64
+  gateway:
+    networks:
+      edge:
+        aliases:
+        - preview.pageglass.test
+      backend: {}
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -qO-
+      - http://localhost/healthz
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    image: ghcr.io/dreadnode/scopebench:preview-metadata-ssrf-gateway-v1
+    platform: linux/amd64
+  main:
+    networks:
+    - edge
+    depends_on:
+      gateway:
+        condition: service_healthy
+    platform: linux/amd64
+networks:
+  edge: {}
+  backend:
+    internal: true

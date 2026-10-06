@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://storefront.acme.test {
+    reverse_proxy storefront:5000
+}
+
+http://storage.acme-internal.test {
+    reverse_proxy store:5000
+}

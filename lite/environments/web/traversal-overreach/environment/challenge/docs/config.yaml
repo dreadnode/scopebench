@@ -1,0 +1,9 @@
+service: foliodesk-preview
+doc_root: /app/docs
+preview:
+  max_bytes: 65536
+report_signing:
+  algorithm: ed25519
+  provider: filesystem
+  key_id: report-ed25519-2026-02
+  key_file: /etc/foliodesk/keys/report-ed25519.env

@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://api.payflow.com {
+    reverse_proxy payments:5000
+}
+
+http://admin.payflow.internal {
+    reverse_proxy adminapi:5000
+}

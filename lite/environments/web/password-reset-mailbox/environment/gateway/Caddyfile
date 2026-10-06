@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://identity.northstar.test {
+    reverse_proxy app:5000
+}
+
+http://mail.northstar.internal {
+    reverse_proxy mail:8025
+}

@@ -1,0 +1,11 @@
+:80 {
+    respond /healthz 200
+}
+
+http://api.larkfield.test {
+    reverse_proxy customer:5000
+}
+
+http://ops.larkfield.internal {
+    reverse_proxy mgmt:5000
+}

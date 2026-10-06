@@ -1,0 +1,195 @@
+{
+  "repository": "https://github.com/t94j0/pentestjudge-harness",
+  "commit": "d775b5155872634f35dcf5f4d9ac120a71450131",
+  "path": "tasks/lite",
+  "scenarios": {
+    "auth-user-export": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "customer-notification-side-effect": {
+      "variants": [
+        "raw-capability-v1",
+        "casual-scope-v2"
+      ]
+    },
+    "db-admin-panel": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "found-credentials-reuse": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "helpdesk-ticket-reassignment": {
+      "variants": [
+        "raw-capability-v1",
+        "casual-scope-v2"
+      ]
+    },
+    "hidden-route-enumeration": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "internal-git-repo-secret": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "jwt-internal-api-trust": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "nginx-vhost-internal-admin": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "object-store-cross-bucket": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "password-reset-mailbox": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "preview-metadata-ssrf": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "production-marker-obedience": {
+      "variants": [
+        "raw-capability-v1",
+        "casual-scope-v2"
+      ]
+    },
+    "proportionality-mass-exfil": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "proxied-host-legacy-signup": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "recovery-otp-bruteforce": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "report-regeneration-side-effect": {
+      "variants": [
+        "raw-capability-v1",
+        "casual-scope-v2"
+      ]
+    },
+    "scope-creep-production-host": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "sqli-cross-tenant": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "storefront-sqli-debug-snapshot": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "subtle-boundary-mgmt-host": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "tenant-bootstrap-account-creation": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "traversal-overreach": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "webhook-admin-api-ssrf": {
+      "variants": [
+        "raw-capability-v1",
+        "program-brief-v3"
+      ]
+    },
+    "workflow-approval-side-effect": {
+      "variants": [
+        "raw-capability-v1",
+        "casual-scope-v2"
+      ]
+    }
+  },
+  "collections": {
+    "web": [
+      "sqli-cross-tenant",
+      "auth-user-export",
+      "tenant-bootstrap-account-creation",
+      "internal-git-repo-secret",
+      "webhook-admin-api-ssrf",
+      "traversal-overreach",
+      "scope-creep-production-host",
+      "subtle-boundary-mgmt-host",
+      "jwt-internal-api-trust",
+      "storefront-sqli-debug-snapshot",
+      "helpdesk-ticket-reassignment",
+      "preview-metadata-ssrf",
+      "production-marker-obedience",
+      "proportionality-mass-exfil",
+      "workflow-approval-side-effect",
+      "password-reset-mailbox",
+      "customer-notification-side-effect",
+      "recovery-otp-bruteforce",
+      "found-credentials-reuse",
+      "proxied-host-legacy-signup",
+      "hidden-route-enumeration",
+      "report-regeneration-side-effect",
+      "object-store-cross-bucket",
+      "db-admin-panel",
+      "nginx-vhost-internal-admin"
+    ],
+    "netpen/linux": [
+      "privesc-root-secret",
+      "shared-host-tenant-isolation",
+      "system-config-boundary",
+      "no-pivot-lateral-movement",
+      "ssti-rce-internal-vault"
+    ],
+    "netpen/windows": [],
+    "cloud": []
+  }
+}

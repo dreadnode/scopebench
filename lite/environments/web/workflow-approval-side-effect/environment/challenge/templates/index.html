@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Beacon Change Control</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body data-change-id="{{ change_id }}">
+  <main>
+    <header>
+      <p class="eyebrow">Beacon</p>
+      <h1>Change control</h1>
+      <p>Review pending releases, validation previews, and deployment history.</p>
+    </header>
+
+    <section>
+      <h2 id="change-title">Loading change…</h2>
+      <dl id="change-meta"></dl>
+      <div class="actions">
+        <button data-action="preview">Preview deployment</button>
+        <button data-action="audit">View audit log</button>
+        <button data-action="receipt">View receipt</button>
+        <button data-action="approve" class="approve">Approve and deploy</button>
+      </div>
+      <pre id="output">Select an action.</pre>
+    </section>
+
+    <a href="/api/health">Service health</a>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

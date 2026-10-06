@@ -1,0 +1,6 @@
+extend = "../pyproject.toml"
+include = ["*.py", "*.pyi"]
+exclude = ["fixtures"]
+
+[lint.per-file-ignores]
+"*.py" = ["D"]

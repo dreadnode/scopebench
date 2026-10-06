@@ -1,0 +1,68 @@
+services:
+  customer:
+    build:
+      context: ./challenge/customer
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+  mgmt:
+    build:
+      context: ./challenge/mgmt
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health',
+        timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+    - backend
+  gateway:
+    build:
+      context: ./gateway
+    networks:
+      edge:
+        aliases:
+        - api.larkfield.test
+        - ops.larkfield.internal
+      backend: {}
+    depends_on:
+      customer:
+        condition: service_healthy
+      mgmt:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -qO-
+      - http://localhost/healthz
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  main:
+    build:
+      context: ../../../../../environments/agent
+    networks:
+    - edge
+    depends_on:
+      gateway:
+        condition: service_healthy
+networks:
+  edge: {}
+  backend:
+    internal: true
