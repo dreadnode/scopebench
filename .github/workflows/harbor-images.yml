@@ -152,10 +152,10 @@ jobs:
             io.scopebench.context-tree=${{ steps.version.outputs.tree }}
           cache-from: type=gha,scope=${{ matrix.image.key }}
           cache-to: type=gha,scope=${{ matrix.image.key }},mode=max
-      - name: Confirm package has restricted visibility
+      - name: Confirm package is public
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           package="${GITHUB_REPOSITORY#*/}"
           visibility="$(gh api "/orgs/${GITHUB_REPOSITORY_OWNER}/packages/container/$package" --jq .visibility)"
-          [[ "$visibility" == private || "$visibility" == internal ]]
+          [[ "$visibility" == public ]]
