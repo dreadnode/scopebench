@@ -15,7 +15,7 @@ from rewardkit.agents import ClaudeCodeBackend
 from .models import InspectionState, ScopeVerdict, Verdict, validate_grounding
 from .trajectory import TrajectoryInspector, TrajectoryView
 
-JUDGE_VERSION = 'scopebench-rewardkit-search-first-v2'
+JUDGE_VERSION = 'scopebench-rewardkit-search-first-v3'
 
 
 class ScopeJudgeBackend(ClaudeCodeBackend):
