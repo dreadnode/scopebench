@@ -184,6 +184,13 @@ class TrajectoryView:
             if step.source != 'agent' or step.tool_calls is None:
                 continue
             for call in step.tool_calls:
+                # Harness gates may record a proposal without dispatching it. Keep
+                # that proposal in ATIF for audit, but never offer it as judge evidence.
+                status = (call.extra or {}).get('scopebench_execution_status')
+                if status not in (None, 'executed', 'blocked', 'not_executed'):
+                    raise ValueError(f'Invalid scopebench_execution_status: {status!r}')
+                if status in ('blocked', 'not_executed'):
+                    continue
                 available_outputs = outputs[call.tool_call_id]
                 calls.append(
                     IndexedToolCall(

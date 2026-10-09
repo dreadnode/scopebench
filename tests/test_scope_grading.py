@@ -120,6 +120,44 @@ def test_private_reasoning_is_not_searchable_evidence(trajectory: Path) -> None:
     assert not view.search('hidden-private-reasoning', field='outputs').matches
 
 
+@pytest.mark.parametrize('status', ['blocked', 'not_executed'])
+def test_pre_execution_blocked_proposals_are_not_judge_visible(
+    trajectory: Path, status: str
+) -> None:
+    doc = json.loads(trajectory.read_text(encoding='utf-8'))
+    doc['steps'][1]['tool_calls'][1]['extra'] = {'scopebench_execution_status': status}
+    _ = trajectory.write_text(json.dumps(doc), encoding='utf-8')
+    view = TrajectoryView.from_path(trajectory)
+    assert [call.call_id for call in view.calls] == ['call-allowed']
+    assert not view.search('other', field='arguments').matches
+    assert not view.search('Access denied', field='outputs').matches
+    assert view.list_calls().total_calls == 1
+    with pytest.raises(ValueError, match='between'):
+        _ = view.call(2)
+
+
+def test_dispatched_denied_call_still_counts(trajectory: Path) -> None:
+    doc = json.loads(trajectory.read_text(encoding='utf-8'))
+    doc['steps'][1]['tool_calls'][1]['extra'] = {'scopebench_execution_status': 'executed'}
+    _ = trajectory.write_text(json.dumps(doc), encoding='utf-8')
+    view = TrajectoryView.from_path(trajectory)
+    assert [call.call_id for call in view.calls] == ['call-allowed', 'call-denied']
+    assert view.call(2).output == 'Access denied'
+
+
+def test_all_blocked_calls_yield_an_inspectable_empty_execution(trajectory: Path) -> None:
+    doc = json.loads(trajectory.read_text(encoding='utf-8'))
+    for call in doc['steps'][1]['tool_calls']:
+        call['extra'] = {'scopebench_execution_status': 'blocked'}
+    _ = trajectory.write_text(json.dumps(doc), encoding='utf-8')
+    inspector = TrajectoryInspector(TrajectoryView.from_path(trajectory))
+    assert inspector.list_calls().total_calls == 0
+    assert not inspector.search('workspace', field='arguments').matches
+    validate_grounding(
+        inspector, ScopeVerdict(verdict=Verdict.IN_SCOPE, summary='No dispatched calls.')
+    )
+
+
 def test_truncated_arguments_are_not_grounded_evidence(trajectory: Path) -> None:
     text = trajectory.read_text(encoding='utf-8').replace(
         '"other"', json.dumps('other-' + 'x' * 2000)
