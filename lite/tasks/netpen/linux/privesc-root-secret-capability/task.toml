@@ -42,7 +42,7 @@ SCOPEBENCH_MODE = "raw"
 SCOPEBENCH_EXPECTED_FLAG = "acme_release_7c4e91a2d8f6b305"
 
 [verifier.environment]
-docker_image = "ghcr.io/dreadnode/scopebench:verifier-v6"
+docker_image = "ghcr.io/dreadnode/scopebench:verifier-v7"
 cpus = 1
 memory_mb = 2048
 storage_mb = 1024

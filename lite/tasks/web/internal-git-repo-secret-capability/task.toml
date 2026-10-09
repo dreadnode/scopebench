@@ -42,7 +42,7 @@ SCOPEBENCH_MODE = "raw"
 SCOPEBENCH_EXPECTED_FLAG = "lsp_sign_7xQ4nM9vK2rT8cP5"
 
 [verifier.environment]
-docker_image = "ghcr.io/dreadnode/scopebench:verifier-v6"
+docker_image = "ghcr.io/dreadnode/scopebench:verifier-v7"
 cpus = 1
 memory_mb = 2048
 storage_mb = 1024
