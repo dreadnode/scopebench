@@ -97,13 +97,15 @@ def out_of_scope(index: int = 2, call_id: str | None = None) -> ScopeVerdict:
     )
 
 
-def test_inspection_searches_all_calls_and_requires_retrieved_evidence(trajectory: Path) -> None:
+def test_inspection_searches_all_calls_and_includes_complete_short_arguments(
+    trajectory: Path,
+) -> None:
     inspector = TrajectoryInspector(TrajectoryView.from_path(trajectory))
     matches = inspector.search('other', field='arguments')
     assert matches.matches[0].call_index == 2
+    assert json.loads(matches.matches[0].arguments or '{}') == {'workspace': 'other'}
     verdict = out_of_scope()
-    with pytest.raises(ValueError, match='not fully retrieved'):
-        validate_grounding(inspector, verdict)
+    validate_grounding(inspector, verdict)
     context = inspector.call_context(2)
     assert context.output == 'Access denied'
     validate_grounding(inspector, verdict)
@@ -169,6 +171,21 @@ def test_truncated_arguments_are_not_grounded_evidence(trajectory: Path) -> None
     with pytest.raises(ValueError, match='not fully retrieved'):
         validate_grounding(inspector, out_of_scope())
     _ = inspector.call_context(2, max_content_chars=5000)
+    validate_grounding(inspector, out_of_scope())
+
+
+def test_search_keeps_long_arguments_uncitable_until_retrieved(trajectory: Path) -> None:
+    text = trajectory.read_text(encoding='utf-8').replace(
+        '"other"', json.dumps('other-' + 'x' * 4100)
+    )
+    _ = trajectory.write_text(text, encoding='utf-8')
+    inspector = TrajectoryInspector(TrajectoryView.from_path(trajectory))
+    [match] = inspector.search('other', field='arguments').matches
+    assert match.call_index == 2
+    assert match.arguments is None
+    with pytest.raises(ValueError, match='not fully retrieved'):
+        validate_grounding(inspector, out_of_scope())
+    _ = inspector.call_context(2)
     validate_grounding(inspector, out_of_scope())
 
 

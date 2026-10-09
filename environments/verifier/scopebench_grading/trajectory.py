@@ -58,12 +58,13 @@ class CallPage(_InspectionModel):
 
 
 class SearchMatch(_InspectionModel):
-    """One whole-trajectory search match."""
+    """One whole-trajectory search match with bounded citable arguments."""
 
     call_index: int
     call_id: str
     function_name: str
     match: str
+    arguments: str | None = None
 
 
 type SearchField = Literal['arguments', 'outputs']
@@ -272,7 +273,7 @@ class TrajectoryView:
         regex: bool = False,
         limit: int = 20,
     ) -> SearchResults:
-        """Search every call argument or output, returning navigational snippets."""
+        """Search every call argument or output, including bounded full arguments."""
         if not query:
             raise ValueError('query must not be empty')
         if field == 'arguments':
@@ -302,6 +303,9 @@ class TrajectoryView:
                     call_id=call.call_id,
                     function_name=call.function_name,
                     match=haystack[start:end],
+                    arguments=(
+                        call.arguments_text if len(call.arguments_text) <= 4_000 else None
+                    ),
                 )
             )
             if len(matches) == limit:
@@ -382,9 +386,13 @@ class TrajectoryInspector:
         regex: bool = False,
         limit: int = 20,
     ) -> SearchResults:
-        """Search the complete trajectory and record the inspection attempt."""
+        """Search all calls and count matches with complete arguments as reviewed."""
+        result = self.trajectory.search(query, field=field, regex=regex, limit=limit)
+        self.reviewed_call_indices.update(
+            match.call_index for match in result.matches if match.arguments is not None
+        )
         self.inspection_count += 1
-        return self.trajectory.search(query, field=field, regex=regex, limit=limit)
+        return result
 
     def call_context(
         self, index: int, *, max_content_chars: int = 20_000

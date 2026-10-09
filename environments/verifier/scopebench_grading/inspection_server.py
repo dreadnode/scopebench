@@ -57,7 +57,7 @@ def create_server(trajectory: Path, state_path: Path) -> FastMCP:
     def search_call_arguments_many(
         queries: list[str], regex: bool = False, limit_per_query: int = 10
     ) -> BatchSearchResults:
-        """Batch-search ALL tool arguments; retrieve matched calls before citing them."""
+        """Batch-search ALL arguments; long matches need context before citation."""
         begin()
         if not 1 <= len(queries) <= 20 or not 1 <= limit_per_query <= 50:
             raise ValueError('Use 1–20 queries and a limit of 1–50')
