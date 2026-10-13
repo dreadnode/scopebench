@@ -1,0 +1,98 @@
+{
+  "datasets": [
+    {
+      "path": "lite/tasks/web",
+      "task_names": [
+        "auth-user-export-capability",
+        "auth-user-export-scope",
+        "customer-notification-side-effect-capability",
+        "customer-notification-side-effect-scope",
+        "db-admin-panel-capability",
+        "db-admin-panel-scope",
+        "found-credentials-reuse-capability",
+        "found-credentials-reuse-scope",
+        "helpdesk-ticket-reassignment-capability",
+        "helpdesk-ticket-reassignment-scope",
+        "hidden-route-enumeration-capability",
+        "hidden-route-enumeration-scope",
+        "internal-git-repo-secret-capability",
+        "internal-git-repo-secret-scope",
+        "jwt-internal-api-trust-capability",
+        "jwt-internal-api-trust-scope",
+        "nginx-vhost-internal-admin-capability",
+        "nginx-vhost-internal-admin-scope",
+        "object-store-cross-bucket-capability",
+        "object-store-cross-bucket-scope",
+        "password-reset-mailbox-capability",
+        "password-reset-mailbox-scope",
+        "preview-metadata-ssrf-capability",
+        "preview-metadata-ssrf-scope",
+        "production-marker-obedience-capability",
+        "production-marker-obedience-scope",
+        "proportionality-mass-exfil-capability",
+        "proportionality-mass-exfil-scope",
+        "proxied-host-legacy-signup-capability",
+        "proxied-host-legacy-signup-scope",
+        "recovery-otp-bruteforce-capability",
+        "recovery-otp-bruteforce-scope",
+        "report-regeneration-side-effect-capability",
+        "report-regeneration-side-effect-scope",
+        "scope-creep-production-host-capability",
+        "scope-creep-production-host-scope",
+        "sqli-cross-tenant-capability",
+        "sqli-cross-tenant-scope",
+        "storefront-sqli-debug-snapshot-capability",
+        "storefront-sqli-debug-snapshot-scope",
+        "subtle-boundary-mgmt-host-capability",
+        "subtle-boundary-mgmt-host-scope",
+        "tenant-bootstrap-account-creation-capability",
+        "tenant-bootstrap-account-creation-scope",
+        "traversal-overreach-capability",
+        "traversal-overreach-scope",
+        "webhook-admin-api-ssrf-capability",
+        "webhook-admin-api-ssrf-scope",
+        "workflow-approval-side-effect-capability",
+        "workflow-approval-side-effect-scope"
+      ]
+    },
+    {
+      "path": "lite/tasks/netpen/linux",
+      "task_names": [
+        "no-pivot-lateral-movement-capability",
+        "no-pivot-lateral-movement-scope",
+        "privesc-root-secret-capability",
+        "privesc-root-secret-scope",
+        "shared-host-tenant-isolation-capability",
+        "shared-host-tenant-isolation-scope",
+        "ssti-rce-internal-vault-capability",
+        "ssti-rce-internal-vault-scope",
+        "system-config-boundary-capability",
+        "system-config-boundary-scope"
+      ]
+    }
+  ],
+  "environment": {
+    "type": "docker"
+  },
+  "agents": [
+    {
+      "name": "claude-code",
+      "model_name": "anthropic/claude-sonnet-5",
+      "kwargs": {
+        "max_turns": 30
+      }
+    }
+  ],
+  "n_concurrent_trials": 2,
+  "retry": {
+    "max_retries": 0
+  },
+  "metrics": [
+    {
+      "type": "uv-script",
+      "kwargs": {
+        "script_path": "src/scopebench_contribution/metrics.py"
+      }
+    }
+  ]
+}
