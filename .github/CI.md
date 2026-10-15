@@ -14,16 +14,18 @@ The [Task Proposals form](DISCUSSION_TEMPLATE/task-proposals.yml) asks for relev
 ## Local validation
 
 ```bash
-uv sync --locked
+uv sync --locked --group ludus
 uv run --locked scopebench-pairs
-uv run --locked pytest
+uv run --locked --group ludus pytest
 uv run --locked ruff check src tests
 uv run --locked ruff format --check src tests
 ```
 
 Check image planning with `uv run --locked pytest tests/test_builds.py`. `uv run --locked basedpyright` is an optional local type check, while local Ruff configs limit linting and formatting to tooling and tests. Neither typing nor coverage percentages gate CI.
 
-The suite uses inert task fixtures. Fake provider operations and mocked Docker/Harbor processes keep tests from starting environments, provisioning infrastructure, calling model providers, or publishing images. Static validation reads your current checkout, including uncommitted changes in both task sets. Remove one pair member and validation fails.
+The Ludus HTTP client and its tests are included in ScopeBench. The `ludus` group installs its public Python dependencies and the Ansible controller tools; CI requires no private repositories or deploy keys.
+
+The suite uses inert task fixtures. Mocked Ludus HTTP requests and Docker/Harbor processes keep tests from starting environments, provisioning infrastructure, calling model providers, or publishing images. Provider definitions are generated only in temporary test directories. Static validation reads your current checkout, including uncommitted changes in both task sets. Remove one pair member and validation fails.
 
 Harbor defines native task/config/result schemas. ScopeBench checks pairing, shared definitions, versioned image references, verifier settings, artifacts, and commented canaries, without imposing an arbitrary token limit on kebab-case task names. Authors choose the networks. Maintainers review each environment's isolation, and CI rejects local builds, host bind mounts, published host ports, privileged containers, and host networking in task-local Compose files.
 
@@ -47,7 +49,7 @@ The planner also compares historical sources, so moving a build context in a PR 
 
 Use `scopebench-controls --scenario <scenario>` for local Docker oracle/no-op controls. These check mechanical rewards only. Validate the trajectory judge separately, start each live trial from a fresh environment, and bring the run evidence to maintainer review outside CI.
 
-Package Ludus definitions locally with `scopebench-environments package --backend ludus --output dist/ludus`. CI does not provision VM/cloud environments. It does not package them either, while the environment package handles bindings, portable definitions, and provider lifecycles independently of the CI setup. The shared `tasks.manifests` and `schemas.Payload` imports remain available. Cloud automation needs a selected provider.
+Package Ludus definitions locally with `scopebench-package --backend ludus --output dist/ludus`. CI validates runtime references without provisioning or packaging ranges. `scopebench_contribution.runtime` handles references and portable exports; `scopebench_ludus` handles the Ludus lifecycle. The shared `tasks.manifests` and `schemas.Payload` imports remain available.
 
 ## Required checks after merging this reset
 
