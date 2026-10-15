@@ -8,13 +8,12 @@ from pathlib import Path
 from typing import cast
 
 from harbor.models.task.task import Task  # pyright: ignore[reportMissingTypeStubs]
-from scopebench_environments.definitions import (
-    binding_for,
-    read_binding,
-    scenario_config,
-    scenario_path,
+
+from scopebench_contribution.runtime import (
+    read_reference,
+    runtime_reference,
 )
-from scopebench_environments.ludus import read_definition
+from scopebench_ludus.config import read_config
 
 from .builds import sources
 from .native import (
@@ -28,6 +27,7 @@ from .native import (
     task_metadata,
     version_tag,
 )
+from .scenarios import scenario_config, scenario_path
 from .tasks import SLUG, collection_root
 
 TASK_NAMESPACE = 'scopebench-lite'
@@ -144,8 +144,8 @@ def check_task(root: Path, manifest: Path, config: TaskConfig) -> None:
         raise ValueError(f'Unexpected task-local implementation files: {manifest}')
     if meta.backend != 'docker':
         if meta.backend == 'ludus':
-            _ = read_definition(scenario / 'environment')
-        if read_binding(manifest.parent / 'environment') != binding_for(root, scenario):
+            _ = read_config(scenario / 'environment')
+        if read_reference(manifest.parent / 'environment') != runtime_reference(root, scenario):
             raise ValueError(f'Task binding differs from shared runtime definition: {manifest}')
         return
     actual = read_compose(manifest.parent / 'environment/docker-compose.yaml')

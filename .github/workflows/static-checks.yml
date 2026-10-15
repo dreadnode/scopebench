@@ -27,5 +27,6 @@ jobs:
       - run: uv run --locked ruff check src tests
       - run: uv run --locked ruff format --check src tests
       # Collection, image planning, grading, and provider contracts use inert
-      # fixtures or mocked processes. This suite never starts benchmark tasks.
-      - run: uv run --locked pytest
+      # fixtures or mocked HTTP. Linux transport tests use local Ansible only;
+      # this suite never provisions ranges or starts benchmark tasks.
+      - run: uv run --locked --group ludus pytest

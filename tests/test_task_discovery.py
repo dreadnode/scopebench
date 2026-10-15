@@ -3,8 +3,8 @@
 from pathlib import Path
 
 import pytest
-from scopebench_environments.definitions import scenario_paths
 
+from scopebench_contribution.scenarios import scenario_paths
 from scopebench_contribution.tasks import manifests, task_path
 from tests.benchmark_helpers import write
 

@@ -15,14 +15,14 @@ from harbor.models.trial.result import (  # pyright: ignore[reportMissingTypeStu
     TrialResult as TrialResult,
 )
 from pydantic import ConfigDict, JsonValue, TypeAdapter
-from scopebench_environments.definitions import (
+
+from .scenarios import (
     Backend,
     Domain,
     Status,
     scenario_config,
     scenario_paths,
 )
-
 from .schemas import Payload
 
 type Document = dict[str, JsonValue]

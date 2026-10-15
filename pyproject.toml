@@ -18,19 +18,27 @@ dev = [
     "harbor-rewardkit==0.2.1",
     "mcp==1.30.0",
 ]
+ludus = [
+    { include-group = "benchmark" },
+    "httpx==0.28.1",
+    "ansible-core==2.19.3",
+    "psutil==7.2.2",
+    "pywinrm[credssp]==0.5.0",
+]
 
 [project.scripts]
 scopebench-build = "scopebench_contribution.builds:main"
 scopebench-pairs = "scopebench_contribution.pairs:main"
 scopebench-controls = "scopebench_contribution.controls:main"
-scopebench-environments = "scopebench_environments.__main__:main"
+scopebench-package = "scopebench_contribution.runtime:main"
+scopebench-ludus = "scopebench_ludus.__main__:main"
 
 [build-system]
 requires = ["uv_build==0.11.16"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = ["scopebench_contribution", "scopebench_environments"]
+module-name = ["scopebench_contribution", "scopebench_ludus"]
 module-root = "src"
 
 [tool.pytest.ini_options]
@@ -62,7 +70,7 @@ mccabe = { max-complexity = 15 }
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["scopebench_contribution", "tests"]
+known-first-party = ["scopebench_contribution", "scopebench_ludus", "tests"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -79,7 +87,7 @@ docstring-code-format = false
 pythonVersion = "3.13"
 typeCheckingMode = "all"
 reportUnnecessaryTypeIgnoreComment = true
-include = ["src/scopebench_contribution", "src/scopebench_environments", "tests"]
+include = ["src/scopebench_contribution", "src/scopebench_ludus", "tests"]
 exclude = ["lite", ".venv", "tests/fixtures"]
 extraPaths = ["src", "environments/verifier"]
 venvPath = "."

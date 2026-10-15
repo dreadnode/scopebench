@@ -5,12 +5,27 @@ from pathlib import Path
 import pytest
 
 from scopebench_contribution import pairs
-from scopebench_contribution.native import MARKER, TaskConfig, read_task
+from scopebench_contribution.native import MARKER, TaskConfig, read_task, task_metadata
+from scopebench_contribution.scenarios import scenario_config, scenario_paths
+from scopebench_contribution.tasks import manifests
 from tests.benchmark_helpers import ROOT, task_path, write
 
 
 def test_complete_collection_passes_static_validation() -> None:
     pairs.check(ROOT)
+
+
+def test_release_has_no_runnable_examples_windows_or_ludus_environments() -> None:
+    assert not (ROOT / 'examples').exists()
+    for scenario in scenario_paths(ROOT):
+        assert 'windows' not in scenario.relative_to(ROOT).parts, scenario
+        assert scenario_config(scenario).backend != 'ludus', scenario
+    for manifest in manifests(ROOT):
+        config = TaskConfig.model_validate(read_task(manifest))
+        metadata = task_metadata(config)
+        assert metadata.domain != 'netpen/windows', manifest
+        assert metadata.backend != 'ludus', manifest
+        assert config.environment.os.value != 'windows', manifest
 
 
 @pytest.fixture

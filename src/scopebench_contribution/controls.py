@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Sequence
 from pathlib import Path
 
-from scopebench_environments.definitions import scenario_path
+from scopebench_contribution.scenarios import scenario_path
 
 from .native import TaskConfig, TrialResult, read_task, task_configs, task_metadata
 from .pairs import check

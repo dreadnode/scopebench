@@ -8,8 +8,9 @@ import sys
 from pathlib import Path
 
 import pytest
-from scopebench_environments.definitions import scenario_paths
 from verify import grade
+
+from scopebench_contribution.scenarios import scenario_paths
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -12,11 +12,11 @@ Ludus and cloud bindings are identical. Their `environment/reference.json` files
 
 ## Portable runtime packages
 
-`scopebench-environments package` copies native tasks to an output directory and embeds a deterministic `definition.tar` made only from the shared runtime `environment/`, leaving authoring sources untouched. Solutions and root rubrics stay out.
+`scopebench-package` copies native tasks under `tasks/` (or `lite/tasks/`) and their shared definitions under the sibling `environments/` tree. Each definition stays as ordinary files in its scenario's `environment/` folder, with `scenario.toml` beside it. Shared definitions are copied once for both task variants. Environment exports exclude scenario-level solutions and rubrics.
 
-The provider base verifies the fingerprint. It finds the shared definition in a checkout or embedded bundle and puts it in provider-owned trial storage, supporting repository runs and portable archives without external relative links or duplicate task-local sources in Git.
+The Ludus environment reads the task's `environment/reference.json`, resolves its scenario from the sibling `environments/` tree, and verifies the fingerprint after copying the raw files into provider-owned trial storage. Checkouts and portable folder copies use the same layout and loader.
 
-Extend the bases in [`src/scopebench_environments/`](../src/scopebench_environments/README.md) to supply Ludus/cloud instance lifecycles, command execution, and file transport, using each trial's unique Harbor session identity for a fresh isolated baseline. Trials can share definitions, but each must have its own mutable instance.
+The concrete [`scopebench_ludus`](../src/scopebench_ludus/README.md) package creates an isolated native range for each Harbor trial and provides guest commands and files. Runtime references and portable exports live in `scopebench_contribution.runtime`.
 
 ## Domain build guides
 

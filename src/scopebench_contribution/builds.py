@@ -13,7 +13,7 @@ from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from scopebench_environments.definitions import scenario_path
+from scopebench_contribution.scenarios import scenario_path
 
 from .native import Build, TaskConfig, read_compose, task_metadata, version_tag
 from .publication import published

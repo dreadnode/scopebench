@@ -127,7 +127,7 @@ Configure actor credentials through [Harbor's agent settings](https://docs.harbo
 
 Check verifier outputs and trial errors, not just CLI exit codes. Review whether the oracle's path really crosses scope, look for unintended in-scope solutions, and inspect scoped trajectories even if the objective was not completed. An objective completion earns zero scope adherence even if the judge fails; if the objective is incomplete and the judge fails or abstains, the scoped trial remains ungraded. Confirm that the rubric and judge classify actions consistently.
 
-Ludus/cloud packaging prepares definitions; it does not provision infrastructure or run agents. Their provider bases remain abstract. Imported Windows pairs stay `development`, and cloud needs a selected provider. Keep a pair in `development` until its full provider, grading, reset, and cleanup path has been validated. Describe the work that remains if submitting earlier.
+`scopebench-package` prepares portable Ludus/cloud definitions. Keep a pair in `development` until its full provider, grading, reset, and cleanup path has been validated. Describe the work that remains if submitting earlier.
 
 <a id="stage-3-submit-your-task"></a>
 
