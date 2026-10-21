@@ -16,7 +16,17 @@ from urllib.parse import urlsplit
 import httpx
 from pydantic import JsonValue, TypeAdapter, ValidationError
 
-from .models import AnsibleItem, LudusAPIError, RangeStatus
+from .models import (
+    AllowedDomains,
+    AnsibleItem,
+    APIEnvelope,
+    LudusAPIError,
+    RangeStatus,
+    SnapshotListing,
+    SnapshotResult,
+    TextResult,
+    UserIdentity,
+)
 
 
 def validate_url(url: str) -> str:
@@ -120,8 +130,14 @@ class LudusClient:
             )
         except ValidationError:
             raise LudusAPIError(operation + ' returned invalid JSON') from None
-        if isinstance(data, dict) and (
-            data.get('error') or data.get('errors') or data.get('success') is False
+        try:
+            envelope = APIEnvelope.model_validate(data)
+        except ValidationError:
+            envelope = None
+        if envelope is not None and (
+            envelope.error
+            or (envelope.errors and not path.startswith(('snapshots/', 'testing/allow')))
+            or envelope.success is False
         ):
             raise LudusAPIError(operation + ' returned an API error', response.status_code)
         return data
@@ -131,24 +147,22 @@ class LudusClient:
         data = await self.request(
             'GET', path, params=range_params(range_id) if range_id is not None else None
         )
-        value = data.get('result') if isinstance(data, dict) else None
-        if not isinstance(value, str):
-            raise LudusAPIError(f'GET {path} returned an invalid result')
-        return value
+        try:
+            result = TextResult.model_validate(data)
+        except ValidationError:
+            raise LudusAPIError(f'GET {path} returned an invalid result') from None
+        return result.result
 
     async def current_user(self) -> str:
         """Resolve the authenticated user without deriving identity from a credential."""
         data = await self.request('GET', 'user')
-        if (
-            not isinstance(data, list)
-            or len(data) != 1
-            or not isinstance(data[0], dict)
-            or not isinstance(data[0].get('userID'), str)
-        ):
+        try:
+            identities = TypeAdapter(list[UserIdentity]).validate_python(data)
+        except ValidationError:
+            raise LudusAPIError('GET user returned an invalid identity') from None
+        if len(identities) != 1 or not identities[0].user_id:
             raise LudusAPIError('GET user returned an invalid identity')
-        identity = data[0]['userID']
-        assert isinstance(identity, str)
-        return identity
+        return identities[0].user_id
 
     async def create_range(self, range_id: str, name: str, description: str, user: str) -> None:
         """Create and assign a new range without changing the default range."""
@@ -206,6 +220,75 @@ class LudusClient:
             params=range_params(range_id),
             body={'machines': ['all']},
         )
+
+    async def power_on(self, range_id: str) -> None:
+        """Power on every VM in the specified range."""
+        _ = await self.request(
+            'PUT', 'range/poweron', params=range_params(range_id), body={'machines': ['all']}
+        )
+
+    async def start_testing(self, range_id: str) -> None:
+        """Enable Ludus's outbound block for an explicitly selected range."""
+        _ = await self.request('PUT', 'testing/start', params=range_params(range_id))
+
+    async def allow_testing_domains(self, range_id: str, domains: list[str]) -> list[str]:
+        """Open only the named model and installer endpoints during testing."""
+        domain_values: list[JsonValue] = [domain for domain in domains]
+        data = await self.request(
+            'POST', 'testing/allow', params=range_params(range_id), body={'domains': domain_values}
+        )
+        try:
+            allowed = AllowedDomains.model_validate(data).allowed
+        except ValidationError:
+            raise LudusAPIError('POST testing/allow did not accept every domain') from None
+        if not set(domains).issubset(set(allowed)):
+            raise LudusAPIError('POST testing/allow did not accept every domain')
+        return allowed
+
+    @staticmethod
+    def _snapshot_result(data: JsonValue, expected: set[int]) -> None:
+        """A successful HTTP response may still contain per-VM failures."""
+        try:
+            result = SnapshotResult.model_validate(data)
+        except ValidationError:
+            raise LudusAPIError('snapshot operation returned invalid data') from None
+        if result.errors or set(result.success) != expected or len(result.success) != len(expected):
+            raise LudusAPIError('snapshot operation did not cover every range VM')
+
+    async def snapshots(self, range_id: str) -> set[tuple[int, str]]:
+        """List snapshot names by VM, rejecting partial list failures."""
+        data = await self.request('GET', 'snapshots/list', params=range_params(range_id))
+        try:
+            listing = SnapshotListing.model_validate(data)
+        except ValidationError:
+            raise LudusAPIError('snapshot list returned invalid data') from None
+        if listing.errors:
+            raise LudusAPIError('snapshot list failed for one or more VMs')
+        return {(item.vmid, item.name) for item in listing.snapshots}
+
+    async def create_snapshot(self, range_id: str, name: str, vmids: set[int]) -> None:
+        """Take a disk-only snapshot of every recorded VM."""
+        vmid_values: list[JsonValue] = [vmid for vmid in sorted(vmids)]
+        body: dict[str, JsonValue] = {'name': name, 'vmids': vmid_values, 'includeRAM': False}
+        data = await self.request(
+            'POST',
+            'snapshots/create',
+            params=range_params(range_id),
+            body=body,
+        )
+        self._snapshot_result(data, vmids)
+
+    async def rollback_snapshot(self, range_id: str, name: str, vmids: set[int]) -> None:
+        """Restore the clean disk state for every recorded VM."""
+        vmid_values: list[JsonValue] = [vmid for vmid in sorted(vmids)]
+        body: dict[str, JsonValue] = {'name': name, 'vmids': vmid_values}
+        data = await self.request(
+            'POST',
+            'snapshots/rollback',
+            params=range_params(range_id),
+            body=body,
+        )
+        self._snapshot_result(data, vmids)
 
     async def upload_role(self, name: str, directory: Path) -> None:
         """Upload a user-scoped role under the supplied name."""

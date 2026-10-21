@@ -30,6 +30,7 @@ def test_local_ansible_command_and_binary_directory_round_trips(
     async def exercise() -> None:
         await transport.select_host()
         await transport.files.create_directories([str(remote)])
+        assert remote.stat().st_mode & 0o777 == 0o777
         result = await transport.exec(
             'printf "%s\\n" "$SB_PROOF"; pwd; exit 7',
             cwd=str(remote),
@@ -39,6 +40,15 @@ def test_local_ansible_command_and_binary_directory_round_trips(
         )
         assert result.return_code == 7
         assert (result.stdout or '').splitlines() == ['{{ literal }}', str(remote.resolve())]
+        pipefail = await transport.exec(
+            'pwd; set -o pipefail; false | true',
+            cwd=None,
+            env=None,
+            timeout_sec=30,
+            user=None,
+        )
+        assert pipefail.return_code == 1
+        assert (pipefail.stdout or '').strip() == str(Path('/tmp').resolve())
         identity = await transport.exec(
             'whoami', cwd=None, env=None, timeout_sec=30, user=getpass.getuser()
         )

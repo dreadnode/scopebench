@@ -41,7 +41,11 @@ class GuestFiles:
                 AnsibleTask(
                     name='Create Harbor log and artifact directories',
                     module=self.module('file'),
-                    parameters={'path': '{{ item }}', 'state': 'directory'},
+                    parameters={
+                        'path': '{{ item }}',
+                        'state': 'directory',
+                        **({'mode': '0777'} if not self.windows else {}),
+                    },
                     loop=[Literal(path) for path in dict.fromkeys(directories)],
                 )
             ]

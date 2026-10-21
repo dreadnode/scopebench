@@ -2,7 +2,7 @@
 
 Follow [CONTRIBUTING.md](../../../CONTRIBUTING.md) and the [shared environment contract](../../README.md) when authoring Windows scenarios. Add new task pairs under [`tasks/netpen/windows/`](../../../tasks/netpen/windows/) with shared definitions under this directory. Docker evaluation configs exclude Ludus tasks.
 
-Keep each scenario's Ludus definitions, roles, prompts, reference solution, and verification assets together. Record the selected scoped prompt in `scenario.toml`.
+Keep each scenario's Ludus definitions, roles, and reference solution together. Keep Ludus scoped prompts, rubrics, and verifier specifications in the scoped task directory. `task_set = "scoped"` in `scenario.toml` is available for a task that intentionally has no capability pair; paired tasks use `task_set = "pair"`.
 
 ## Authoring
 

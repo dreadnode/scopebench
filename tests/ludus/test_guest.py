@@ -5,13 +5,14 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
-from typing import cast
+from unittest.mock import AsyncMock
 
 import pytest
 from harbor.environments.base import ExecResult  # pyright: ignore[reportMissingTypeStubs]
 from harbor.models.task.config import (  # pyright: ignore[reportMissingTypeStubs]
     TaskOS,
 )
+from pydantic import JsonValue, TypeAdapter
 
 from scopebench_ludus import environment as runner
 from tests.ludus.controller import Controller
@@ -24,15 +25,21 @@ def test_proxy_is_only_passed_to_ansible_and_scoped_exec_is_literal(
 ) -> None:
     monkeypatch.setenv('LUDUS_WINRM_PROXY', 'http://127.0.0.1:22148')
     asyncio.run(environment.start(force_build=False))
+    tasks = AsyncMock(wraps=environment.guest.ansible.tasks)
+    monkeypatch.setattr(environment.guest.ansible, 'tasks', tasks)
     environment.default_user = 'agent'
     with environment.scoped_exec_env({'SB_PROOF': '{{ scoped }}'}):
         result = asyncio.run(
             environment.exec('echo {{ literal }}', env={'SB_PROOF': 'per-command'}, cwd=r'C:\proof')
         )
     task = controller.plays[-1][0]
+    assert tasks.call_args.kwargs['timeout'] == 21600
     assert task['environment'] == {'SB_PROOF': '{{ scoped }}'}
-    assert cast(dict[str, object], task['vars'])['ansible_become_user'] == 'agent'
-    assert cast(dict[str, str], task['args'])['chdir'] == r'C:\proof'
+    assert (
+        TypeAdapter(dict[str, JsonValue]).validate_python(task['vars'])['ansible_become_user']
+        == 'agent'
+    )
+    assert TypeAdapter(dict[str, str]).validate_python(task['args'])['chdir'] == r'C:\proof'
     assert '!unsafe' in controller.raw_playbooks[-1]
     assert result == ExecResult(return_code=7, stdout='fixture stdout\r\n', stderr='fixture stderr')
     for process in controller.processes:

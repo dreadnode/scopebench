@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import fcntl
 import os
+import re
 from pathlib import Path
 from typing import ClassVar, Literal, Self
 
@@ -14,6 +16,7 @@ from scopebench_contribution.schemas import Payload
 from .client import LudusAPIError, LudusClient, validate_url
 
 CLEANUP_TIMEOUT_SEC = 120
+SNAPSHOT_TIMEOUT_SEC = 900
 
 
 class LudusResources(Payload):
@@ -28,6 +31,12 @@ class LudusResources(Payload):
     name: str
     state: Literal['absent', 'pending', 'owned'] = 'absent'
     roles: list[str] = Field(default_factory=list)
+    cache_key: str | None = None
+    snapshot_name: str | None = None
+    snapshot_vmids: list[int] = Field(default_factory=list)
+    snapshot_state: Literal['building', 'busy', 'resetting', 'ready', 'dirty'] | None = None
+    testing_allowed_domains: list[str] | None = None
+    testing_requested_domains: list[str] | None = None
 
     @model_validator(mode='after')
     def validate_record(self) -> Self:
@@ -36,6 +45,13 @@ class LudusResources(Payload):
         prefix = f'scopebench_{self.range_id}_'.lower()
         if any(not role.startswith(prefix) or not role.isidentifier() for role in self.roles):
             raise ValueError('Recovery role names must belong to this trial')
+        if self.cache_key is not None and not re.fullmatch(r'[0-9a-f]{64}', self.cache_key):
+            raise ValueError('Invalid cached range key')
+        if self.snapshot_vmids and (
+            len(set(self.snapshot_vmids)) != len(self.snapshot_vmids)
+            or any(vmid <= 0 for vmid in self.snapshot_vmids)
+        ):
+            raise ValueError('Invalid cached snapshot VM IDs')
         return self
 
     @property
@@ -146,15 +162,46 @@ async def cleanup_resources(
 async def recover(record: Path) -> None:
     """Delete only recorded trial resources using the current controller credential."""
     resources = LudusResources.model_validate_json(record.read_bytes())
-    client = LudusClient(
-        resources.url,
-        os.environ.get('LUDUS_API_KEY', ''),
-        verify=resources.verify,
-        timeout=CLEANUP_TIMEOUT_SEC,
-    )
+    descriptor: int | None = None
+    if resources.cache_key is not None:
+        if record.name != f'{resources.cache_key}.json':
+            raise ValueError('Cached Ludus record path differs from its identity')
+        descriptor = os.open(
+            record.with_suffix('.lock'), os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600
+        )
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            os.close(descriptor)
+            raise RuntimeError('This cached Ludus range is already in use') from None
     try:
-        async with asyncio.timeout(CLEANUP_TIMEOUT_SEC):
-            await cleanup_resources(client, resources, record, delete=True)
+        if descriptor is not None:
+            locked = LudusResources.model_validate_json(record.read_bytes())
+            if locked.cache_key != resources.cache_key:
+                raise ValueError('Cached Ludus record changed while acquiring its lock')
+            resources = locked
+        timeout = SNAPSHOT_TIMEOUT_SEC if resources.cache_key is not None else CLEANUP_TIMEOUT_SEC
+        client = LudusClient(
+            resources.url,
+            os.environ.get('LUDUS_API_KEY', ''),
+            verify=resources.verify,
+            timeout=timeout,
+        )
+        try:
+            async with asyncio.timeout(timeout):
+                await cleanup_resources(client, resources, record, delete=True)
+            if (
+                resources.cache_key is not None
+                and resources.state == 'absent'
+                and not resources.roles
+            ):
+                resources.snapshot_name = None
+                resources.snapshot_vmids = []
+                resources.snapshot_state = None
+        finally:
+            resources.save(record)
+            await client.close()
     finally:
-        resources.save(record)
-        await client.close()
+        if descriptor is not None:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+            os.close(descriptor)

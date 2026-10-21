@@ -1,5 +1,6 @@
 """Namespace bundled roles while preserving native Ludus range settings."""
 
+import re
 import shutil
 from pathlib import Path
 
@@ -32,6 +33,33 @@ def remap_roles(roles: JsonValue, aliases: dict[str, str]) -> None:
                             dependency['role'] = aliases.get(name, name)
 
 
+def inject_task_variables(value: JsonValue, variables: dict[str, str]) -> JsonValue:
+    """Replace only whole scalar placeholders in the native range definition."""
+    used: set[str] = set()
+
+    def replace(item: JsonValue) -> JsonValue:
+        if isinstance(item, str):
+            match = re.fullmatch(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}', item)
+            if match:
+                name = match.group(1)
+                if name not in variables:
+                    raise ValueError(f'Undeclared task variable: {name}')
+                used.add(name)
+                return variables[name]
+        if isinstance(item, list):
+            return [replace(child) for child in item]
+        if isinstance(item, dict):
+            return {key: replace(child) for key, child in item.items()}
+        return item
+
+    result = replace(value)
+    if used != variables.keys():
+        raise ValueError(
+            f'Task variables unused in range configuration: {sorted(variables.keys() - used)}'
+        )
+    return result
+
+
 async def upload_roles(
     client: LudusClient,
     definition: Path,
@@ -39,10 +67,11 @@ async def upload_roles(
     directory: Path,
     resources: LudusResources,
     record: Path,
+    task_variables: dict[str, str],
 ) -> bytes:
     """Upload bundled roles under trial names and return native range YAML."""
     source = definition / config.range_config
-    if not config.local_roles:
+    if not config.local_roles and not task_variables:
         return source.read_bytes()
     aliases = {
         Path(role).name: f'scopebench_{resources.range_id}_{Path(role).name}'.lower()
@@ -64,6 +93,9 @@ async def upload_roles(
         resources.save(record)
         await client.upload_role(name, target)
     native = TypeAdapter(dict[str, JsonValue]).validate_python(yaml.safe_load(source.read_text()))
+    native = TypeAdapter(dict[str, JsonValue]).validate_python(
+        inject_task_variables(native, task_variables)
+    )
     hosts = native.get('ludus')
     if not isinstance(hosts, list):
         raise ValueError('Native Ludus configuration must contain a ludus VM list')

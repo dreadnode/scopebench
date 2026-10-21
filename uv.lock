@@ -158,6 +158,15 @@ wheels = [
 ]
 
 [[package]]
+name = "asyncio"
+version = "4.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/71/ea/26c489a11f7ca862d5705db67683a7361ce11c23a7b98fc6c2deaeccede2/asyncio-4.0.0.tar.gz", hash = "sha256:570cd9e50db83bc1629152d4d0b7558d6451bb1bfd5dfc2e935d96fc2f40329b", size = 5371, upload-time = "2025-08-05T02:51:46.605Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/57/64/eff2564783bd650ca25e15938d1c5b459cda997574a510f7de69688cb0b4/asyncio-4.0.0-py3-none-any.whl", hash = "sha256:c1eddb0659231837046809e68103969b2bef8b0400d59cfa6363f6b5ed8cc88b", size = 5555, upload-time = "2025-08-05T02:51:45.767Z" },
+]
+
+[[package]]
 name = "attrs"
 version = "26.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -639,6 +648,38 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/77/cd/9be253869fc42e764de7f3dedd6969af7d44ff9c3375214a3442a6f3fc08/fsspec-2026.9.0.tar.gz", hash = "sha256:0f08147951c8cb31d844c3547d631053b127863b60be04cf06e121333ee0e2fe", size = 333545, upload-time = "2026-09-18T17:50:42.825Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl", hash = "sha256:8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f", size = 221738, upload-time = "2026-09-18T17:50:41.341Z" },
+]
+
+[[package]]
+name = "gql"
+version = "4.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "graphql-core" },
+    { name = "tenacity" },
+    { name = "yarl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/85/95/15fdc8ef0b3a5333a019ad1ade6097b3251a599637e9d477e938da97a030/gql-4.4.0.tar.gz", hash = "sha256:e54fe470d51347ceb46a04fc88c5553695d2d8c86b05bef13aeee8b8f2d5f61a", size = 234190, upload-time = "2026-09-27T16:40:07.193Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/75/c4/3c28d6e7d73072d1d94f4a4162f5ef6031f7b5a6fd420841fb4b78e8b9f7/gql-4.4.0-py3-none-any.whl", hash = "sha256:150ffd909a8814f14c9ca19ec9410afd572443253789d57e7efd6b92cc24d8f7", size = 96213, upload-time = "2026-09-27T16:40:06.031Z" },
+]
+
+[package.optional-dependencies]
+aiohttp = [
+    { name = "aiohttp" },
+]
+websockets = [
+    { name = "websockets" },
+]
+
+[[package]]
+name = "graphql-core"
+version = "3.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/90/dfade6d16a55abb45e41b215fcdc940e4f119a6ac7d87430d45d020b659f/graphql_core-3.3.0.tar.gz", hash = "sha256:fd3424e88af3f3211931c6ff96350f1cd9069cf0f1a31b9972899e35d39136b5", size = 726439, upload-time = "2026-09-27T14:50:14.57Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/13/03fb01b3581134cc30d7dd3fb8a9c429267574ace881a9e72c2f57896ee9/graphql_core-3.3.0-py3-none-any.whl", hash = "sha256:d37fac6ef4dfc3eaa5daa59dcb498d7cbb118439d240993c68fddc4cb1bade44", size = 347906, upload-time = "2026-09-27T14:50:12.905Z" },
 ]
 
 [[package]]
@@ -1212,6 +1253,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/02/8b/b2c2805c3eb6fa4cdf5512fb95ac6174dde71e34dd601c5be52f4df5dc82/multidict-6.9.1-cp315-cp315t-win_amd64.whl", hash = "sha256:e96ca64383efa107262ee3949f047af5ee4f1845ba09463466c04d35a83bd3ec", size = 64984, upload-time = "2026-09-21T17:58:59.446Z" },
     { url = "https://files.pythonhosted.org/packages/fd/34/03f1d204d698c408f4754c969882609b6b7a902c0e3d16a7033f219cdeda/multidict-6.9.1-cp315-cp315t-win_arm64.whl", hash = "sha256:501ed8b02a5990c67a91c732843609d43a6be1f7576fcdfc867331239f37fbd3", size = 58742, upload-time = "2026-09-21T17:59:01.726Z" },
     { url = "https://files.pythonhosted.org/packages/be/59/e26cb779be4c591d1a910f59d29aca9fba4de70349840a833beba2652371/multidict-6.9.1-py3-none-any.whl", hash = "sha256:7bf6478188f4e47bf5686e8a33da4ae28bf43b1b2528d9ee144d28492bfac60b", size = 19176, upload-time = "2026-09-21T17:59:03.501Z" },
+]
+
+[[package]]
+name = "mythic"
+version = "0.1.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "asyncio" },
+    { name = "gql", extra = ["aiohttp", "websockets"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b8/9c/2a53d3a92d89037d65c087588bd68b28756e305ff44172621ca200e31fb7/mythic-0.1.8.tar.gz", hash = "sha256:9c7b8cd98847fb0f6c1976f93325f05b9e9a13eea86881b016639683e530534c", size = 23709, upload-time = "2023-11-28T18:13:50.356Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/01/16dda3dd89b1a7b45d4194a284ad329d48c231c4a01b843cee1d0b335307/mythic-0.1.8-py3-none-any.whl", hash = "sha256:76cd9705fcf7dbbfe0f0fd5902179df3a5a1dfd6f00f7a84cae6845d1b70a563", size = 24030, upload-time = "2023-11-28T18:13:48.342Z" },
 ]
 
 [[package]]
@@ -1999,6 +2054,7 @@ dev = [
     { name = "harbor" },
     { name = "harbor-rewardkit" },
     { name = "mcp" },
+    { name = "mythic" },
     { name = "pytest" },
     { name = "ruff" },
     { name = "types-pyyaml" },
@@ -2007,6 +2063,7 @@ ludus = [
     { name = "ansible-core" },
     { name = "harbor" },
     { name = "httpx" },
+    { name = "mythic" },
     { name = "psutil" },
     { name = "pywinrm", extra = ["credssp"] },
 ]
@@ -2024,6 +2081,7 @@ dev = [
     { name = "harbor", specifier = "==0.23.0" },
     { name = "harbor-rewardkit", specifier = "==0.2.1" },
     { name = "mcp", specifier = "==1.30.0" },
+    { name = "mythic", specifier = "==0.1.8" },
     { name = "pytest", specifier = "==9.1.1" },
     { name = "ruff", specifier = "==0.14.1" },
     { name = "types-pyyaml", specifier = "==6.0.12.20260906" },
@@ -2032,6 +2090,7 @@ ludus = [
     { name = "ansible-core", specifier = "==2.19.3" },
     { name = "harbor", specifier = "==0.23.0" },
     { name = "httpx", specifier = "==0.28.1" },
+    { name = "mythic", specifier = "==0.1.8" },
     { name = "psutil", specifier = "==7.2.2" },
     { name = "pywinrm", extras = ["credssp"], specifier = "==0.5.0" },
 ]
