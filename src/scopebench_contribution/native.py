@@ -3,7 +3,7 @@
 import re
 import tomllib
 from pathlib import Path
-from typing import ClassVar, Literal, cast
+from typing import ClassVar, Literal
 
 import yaml
 
@@ -46,7 +46,7 @@ class Compose(Payload):
 
     def document(self) -> Document:
         """Serialize service options and network declarations losslessly."""
-        return cast(Document, self.model_dump(exclude_unset=True))
+        return DOCUMENT.validate_python(self.model_dump(exclude_unset=True))
 
 
 class Metadata(Payload):
@@ -84,7 +84,7 @@ def scenarios(root: Path, backend: Backend | None = 'docker') -> list[Path]:
 def read_task(path: Path, *, text: str | None = None) -> Document:
     """Read task data while rejecting values outside the supported JSON domain."""
     return DOCUMENT.validate_python(
-        cast(object, tomllib.loads(path.read_text(encoding='utf-8') if text is None else text))
+        tomllib.loads(path.read_text(encoding='utf-8') if text is None else text)
     )
 
 
@@ -98,7 +98,7 @@ def task_configs(root: Path) -> list[tuple[Path, Document]]:
 def read_compose(path: Path, *, text: str | None = None) -> Compose:
     """Validate Compose structure and preserve all service options."""
     return Compose.model_validate(
-        cast(object, yaml.safe_load(path.read_text(encoding='utf-8') if text is None else text))
+        yaml.safe_load(path.read_text(encoding='utf-8') if text is None else text)
     )
 
 

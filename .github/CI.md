@@ -25,7 +25,7 @@ Check image planning with `uv run --locked pytest tests/test_builds.py`. `uv run
 
 The Ludus HTTP client and its tests are included in ScopeBench. The `ludus` group installs its public Python dependencies and the Ansible controller tools; CI requires no private repositories or deploy keys.
 
-The suite uses inert task fixtures. Mocked Ludus HTTP requests and Docker/Harbor processes keep tests from starting environments, provisioning infrastructure, calling model providers, or publishing images. Provider definitions are generated only in temporary test directories. Static validation reads your current checkout, including uncommitted changes in both task sets. Remove one pair member and validation fails.
+The suite uses inert task fixtures. Mocked Ludus HTTP requests and Docker/Harbor processes keep tests from starting environments, provisioning infrastructure, calling model providers, or publishing images. Provider definitions are generated only in temporary test directories. Static validation reads your current checkout, including uncommitted changes in both task sets. Paired scenarios require both task members; a scenario explicitly marked `task_set = "scoped"` requires one scoped task.
 
 Harbor defines native task/config/result schemas. ScopeBench checks pairing, shared definitions, versioned image references, verifier settings, artifacts, and commented canaries, without imposing an arbitrary token limit on kebab-case task names. Authors choose the networks. Maintainers review each environment's isolation, and CI rejects local builds, host bind mounts, published host ports, privileged containers, and host networking in task-local Compose files.
 

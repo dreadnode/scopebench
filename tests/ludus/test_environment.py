@@ -4,13 +4,22 @@ from __future__ import annotations
 
 import asyncio
 import shutil
-from typing import cast
+import stat
+from pathlib import Path
 
 import pytest
 import yaml
+from harbor.environments.factory import (  # pyright: ignore[reportMissingTypeStubs]
+    EnvironmentFactory,
+)
 from harbor.models.task.config import (  # pyright: ignore[reportMissingTypeStubs]
+    EnvironmentConfig,
+    NetworkMode,
+    NetworkPolicy,
     TaskOS,
 )
+from harbor.models.trial.paths import TrialPaths  # pyright: ignore[reportMissingTypeStubs]
+from pydantic import JsonValue, TypeAdapter
 
 from scopebench_contribution.runtime import (
     runtime_reference,
@@ -18,6 +27,105 @@ from scopebench_contribution.runtime import (
 from scopebench_ludus import environment as runner
 from scopebench_ludus.resources import LudusResources
 from tests.ludus.controller import Controller
+from tests.ludus_helpers import IMPORT_PATH, prepare_environment
+
+type Document = dict[str, JsonValue]
+DOCUMENT = TypeAdapter[Document](Document)
+
+
+def mapping(value: JsonValue) -> Document:
+    """Require a mapping from a validated range configuration."""
+    if not isinstance(value, dict):
+        raise AssertionError('Expected a range configuration mapping')
+    return value
+
+
+def range_config(path: Path) -> tuple[Document, list[JsonValue]]:
+    """Load a mutable range configuration with validated JSON values."""
+    config = DOCUMENT.validate_python(yaml.safe_load(path.read_text(encoding='utf-8')))
+    hosts = config['ludus']
+    if not isinstance(hosts, list):
+        raise AssertionError('Expected a Ludus host list')
+    return config, hosts
+
+
+def test_allowlist_activates_testing_before_agent_access(
+    tmp_path: Path, controller: Controller
+) -> None:
+    task = prepare_environment(tmp_path)
+    scenario = tmp_path / 'environments/netpen/windows/provider-fixture'
+    config_path = scenario / 'environment/ludus/range-config.yml'
+    config, hosts = range_config(config_path)
+    for index, host in enumerate(hosts):
+        mapping(host)['testing'] = {'snapshot': index == 0, 'block_internet': True}
+    _ = config_path.write_text(yaml.safe_dump(config))
+    _ = (task / 'reference.json').write_text(
+        runtime_reference(tmp_path, scenario).model_dump_json()
+    )
+    loaded = EnvironmentFactory.create_environment_from_import_path(  # pyright: ignore[reportUnknownMemberType]
+        import_path=IMPORT_PATH,
+        environment_dir=task,
+        environment_name='isolated',
+        session_id='isolated-session',
+        trial_paths=TrialPaths(tmp_path / 'isolated-trial'),
+        task_env_config=EnvironmentConfig(os=TaskOS.WINDOWS),
+        network_policy=NetworkPolicy(
+            network_mode=NetworkMode.ALLOWLIST,
+            allowed_hosts=['api.anthropic.com', 'downloads.claude.ai'],
+        ),
+    )
+    assert isinstance(loaded, runner.LudusEnvironment)
+    asyncio.run(loaded.start(force_build=False))
+    assert loaded.range_id is not None
+    assert controller.testing[loaded.range_id] is True
+    assert controller.allowed_domains[loaded.range_id] == [
+        'api.anthropic.com (203.0.113.10)',
+        'downloads.claude.ai (203.0.113.10)',
+    ]
+    assert controller.events.index('POST range/deploy') < controller.events.index(
+        'PUT testing/start'
+    )
+    assert controller.events.index('PUT testing/start') < controller.events.index(
+        'POST testing/allow'
+    )
+    record = LudusResources.model_validate_json(loaded.resource_record.read_bytes())
+    assert record.testing_allowed_domains == [
+        'api.anthropic.com (203.0.113.10)',
+        'downloads.claude.ai (203.0.113.10)',
+    ]
+    asyncio.run(loaded.stop(delete=True))
+
+
+def test_allowlist_rejects_incomplete_ludus_rule_before_agent_access(
+    tmp_path: Path, controller: Controller
+) -> None:
+    task = prepare_environment(tmp_path)
+    scenario = tmp_path / 'environments/netpen/windows/provider-fixture'
+    config_path = scenario / 'environment/ludus/range-config.yml'
+    config, hosts = range_config(config_path)
+    for index, host in enumerate(hosts):
+        mapping(host)['testing'] = {'snapshot': index == 0, 'block_internet': True}
+    _ = config_path.write_text(yaml.safe_dump(config))
+    _ = (task / 'reference.json').write_text(
+        runtime_reference(tmp_path, scenario).model_dump_json()
+    )
+    loaded = EnvironmentFactory.create_environment_from_import_path(  # pyright: ignore[reportUnknownMemberType]
+        import_path=IMPORT_PATH,
+        environment_dir=task,
+        environment_name='isolated',
+        session_id='isolated-session',
+        trial_paths=TrialPaths(tmp_path / 'isolated-trial'),
+        task_env_config=EnvironmentConfig(os=TaskOS.WINDOWS),
+        network_policy=NetworkPolicy(
+            network_mode=NetworkMode.ALLOWLIST,
+            allowed_hosts=['api.anthropic.com', 'downloads.claude.ai'],
+        ),
+    )
+    assert isinstance(loaded, runner.LudusEnvironment)
+    controller.partial_testing_allow = True
+    with pytest.raises(RuntimeError, match='required allowlist'):
+        asyncio.run(loaded.start(force_build=False))
+    assert not controller.ranges
 
 
 def test_lifecycle_scopes_http_mutations_and_keeps_credentials_private(
@@ -36,7 +144,7 @@ def test_lifecycle_scopes_http_mutations_and_keeps_credentials_private(
         asyncio.run(environment.start(force_build=False))
     assert len(controller.calls) == count
     setup = controller.plays[0][0]
-    assert set(cast(list[str], setup['loop'])) >= {
+    assert set(TypeAdapter(list[str]).validate_python(setup['loop'])) >= {
         'C:/logs/agent',
         'C:/logs/verifier',
         'C:/logs/artifacts',
@@ -76,6 +184,12 @@ def test_failed_start_cleans_partial_resources(
     record = LudusResources.model_validate_json(environment.resource_record.read_bytes())
     assert record.state == 'absent'
     assert not record.roles
+    if failure == 'deployment':
+        log = environment.resource_record.with_suffix('.deploy.log')
+        assert (
+            log.read_text(encoding='utf-8') == 'TASK [fixture]\nfatal: fixture deployment error\n'
+        )
+        assert stat.S_IMODE(log.stat().st_mode) == 0o600
 
 
 def test_provider_rejects_backend_mismatch(
@@ -105,8 +219,7 @@ def test_arbitrary_native_topology_preserves_all_vms_and_variables(
         environment.environment_dir.parents[4] / 'environments/netpen/windows/provider-fixture'
     )
     config_path = runtime / 'environment/ludus/range-config.yml'
-    config = cast(dict[str, object], yaml.safe_load(config_path.read_text()))
-    machines = cast(list[dict[str, object]], config['ludus'])
+    config, machines = range_config(config_path)
     machines.extend(
         [
             {
@@ -126,9 +239,7 @@ def test_arbitrary_native_topology_preserves_all_vms_and_variables(
     _ = config_path.write_text(yaml.safe_dump(config))
     provider = runtime / 'environment/provider.toml'
     _ = provider.write_text(
-        provider.read_text()
-        .replace('mode = "shell"', 'mode = "mythic-apollo"')
-        .replace('preseeded_callback = false', 'preseeded_callback = true')
+        provider.read_text().replace('mode = "shell"', 'mode = "mythic-apollo"')
     )
     _ = (environment.environment_dir / 'reference.json').write_text(
         runtime_reference(runtime.parents[3], runtime).model_dump_json()
@@ -137,7 +248,7 @@ def test_arbitrary_native_topology_preserves_all_vms_and_variables(
     controller.windows = windows
     asyncio.run(environment.start(force_build=False))
     deployed = controller.range_configs[0]
-    assert cast(list[dict[str, object]], deployed['ludus'])[1:] == machines[1:]
+    assert TypeAdapter(list[Document]).validate_python(deployed['ludus'])[1:] == machines[1:]
     assert deployed['network'] == config['network']
     result = asyncio.run(
         environment.exec(
@@ -147,7 +258,10 @@ def test_arbitrary_native_topology_preserves_all_vms_and_variables(
     assert result.return_code == 7
     task = controller.plays[-1][0]
     assert ('ansible.windows.win_shell' if windows else 'ansible.builtin.shell') in task
-    assert cast(dict[str, object], task['vars'])['ansible_become_method'] == (
+    assert TypeAdapter(Document).validate_python(task['args'])['executable'] == (
+        r'C:\Windows\System32\cmd.exe' if windows else '/bin/bash'
+    )
+    assert TypeAdapter(Document).validate_python(task['vars'])['ansible_become_method'] == (
         'runas' if windows else 'sudo'
     )
     assert 'hosts: executor' in controller.raw_playbooks[-1]
@@ -169,10 +283,10 @@ def test_installed_native_roles_and_variables_are_preserved_alongside_bundled_ro
             )
         )
     path = runtime / 'environment/ludus/range-config.yml'
-    config = cast(dict[str, object], yaml.safe_load(path.read_text()))
-    host = cast(list[dict[str, object]], config['ludus'])[0]
+    config, hosts = range_config(path)
+    host = mapping(hosts[0])
     dependency = 'fixture_role' if bundled else 'badsectorlabs.ludus_adcs'
-    roles: list[object] = [
+    roles: list[JsonValue] = [
         'badsectorlabs.ludus_adcs',
         {
             'name': 'existing_role',
@@ -196,9 +310,7 @@ def test_installed_native_roles_and_variables_are_preserved_alongside_bundled_ro
     native = f'scopebench_{environment.range_id}_fixture_role'.lower()
     if bundled:
         roles[0] = {'name': native}
-        cast(dict[str, object], roles[2])['depends_on'] = [
-            {'vm_name': '{{ range_id }}-windows', 'role': native}
-        ]
+        mapping(roles[2])['depends_on'] = [{'vm_name': '{{ range_id }}-windows', 'role': native}]
         assert 'Inert role fixture' in controller.role_tasks[0]
         assert (
             controller.events.index('PUT ansible/role/fromtar')
@@ -284,7 +396,7 @@ def test_bundled_metadata_dependencies_follow_trial_role_names(
         runtime_reference(runtime.parents[3], runtime).model_dump_json()
     )
     asyncio.run(environment.start(force_build=False))
-    uploaded = cast(dict[str, object], yaml.safe_load(controller.role_metadata[1]))
+    uploaded = DOCUMENT.validate_python(yaml.safe_load(controller.role_metadata[1]))
     assert uploaded['dependencies'] == [
         f'scopebench_{environment.range_id}_fixture_role'.lower(),
         'external.role',

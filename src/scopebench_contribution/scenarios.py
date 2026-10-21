@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import ClassVar, Literal, cast
+from typing import ClassVar, Literal
 
 from pydantic import ConfigDict, Field
 
@@ -23,7 +23,7 @@ class ScenarioConfig(Payload):
     backend: Backend
     status: Status = 'development'
     version: str = Field(pattern=r'^[0-9]+\.[0-9]+\.[0-9]+$')
-    selected_scope: str | None = None
+    task_set: Literal['pair', 'scoped'] = 'pair'
 
 
 def scenario_path(root: Path, domain: Domain, name: str) -> Path:
@@ -36,7 +36,7 @@ def scenario_path(root: Path, domain: Domain, name: str) -> Path:
 def scenario_config(path: Path) -> ScenarioConfig:
     """Read one authored scenario without importing an execution provider."""
     return ScenarioConfig.model_validate(
-        cast(object, tomllib.loads((path / 'scenario.toml').read_text(encoding='utf-8')))
+        tomllib.loads((path / 'scenario.toml').read_text(encoding='utf-8'))
     )
 
 

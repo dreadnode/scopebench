@@ -7,13 +7,13 @@ import hashlib
 import json
 import shutil
 import sys
-import tomllib
 from collections.abc import Sequence
 from pathlib import Path
-from typing import ClassVar, Literal, cast
+from typing import ClassVar, Literal
 
 from pydantic import ConfigDict, Field
 
+from .native import read_task
 from .scenarios import Backend, scenario_config
 from .schemas import Payload
 from .tasks import collection_root, manifests
@@ -106,9 +106,9 @@ def package(root: Path, output: Path, backend: Backend) -> int:
         raise ValueError('Package destination already exists')
     count = 0
     for manifest in manifests(root):
-        data = cast(dict[str, object], tomllib.loads(manifest.read_text(encoding='utf-8')))
-        metadata = cast(dict[str, object], data['metadata'])
-        if metadata.get('backend') != backend:
+        data = read_task(manifest)
+        metadata = data.get('metadata')
+        if not isinstance(metadata, dict) or metadata.get('backend') != backend:
             continue
         binding = read_reference(manifest.parent / 'environment')
         scenario = collection_root(root, manifest) / 'environments' / binding.scenario

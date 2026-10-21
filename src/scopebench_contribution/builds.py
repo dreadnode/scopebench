@@ -65,7 +65,11 @@ def verifier_specifications(root: Path, *, revision: str | None = None) -> dict[
     for manifest in manifests:
         config = TaskConfig.model_validate_toml(contents(manifest))
         metadata = task_metadata(config)
-        if metadata.scope == 'scoped':
+        if (
+            metadata.scope == 'scoped'
+            and config.verifier.environment is not None
+            and config.verifier.environment.docker_image is not None
+        ):
             name = metadata.benchmark
             if name in result:
                 raise ValueError(f'Duplicate scoped specification: {name}')

@@ -39,8 +39,10 @@ def assert_native_task(task_dir: Path) -> None:
     assert task.paths.discovered_solve_path is None
     assert task.paths.discovered_test_path is None
     assert task.config.verifier.environment is not None
-    assert task.config.verifier.environment.docker_image is not None
     backend = task_metadata(TaskConfig.model_validate(read_task(task_dir / 'task.toml'))).backend
+    if task.config.verifier.environment.docker_image is None:
+        assert backend == 'ludus'
+        assert (task_dir / 'tests/Dockerfile').is_file()
     runtime = 'docker-compose.yaml' if backend == 'docker' else 'reference.json'
     assert (task.paths.environment_dir / runtime).is_file()
     if backend != 'docker':

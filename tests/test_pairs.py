@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from verify import grade
 
-from scopebench_contribution.scenarios import scenario_paths
+from scopebench_contribution.scenarios import scenario_config, scenario_paths
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,9 +23,31 @@ def test_full_collection_has_one_pair_per_environment() -> None:
         text=True,
         check=True,
     )
-    count = len(scenario_paths(ROOT))
-    assert count > 0
-    assert f'Validated {count} pairs' in result.stdout
+    scenarios = scenario_paths(ROOT)
+    scoped_only = sum(scenario_config(path).task_set == 'scoped' for path in scenarios)
+    assert scenarios
+    assert (
+        f'Validated {len(scenarios) - scoped_only} pairs and {scoped_only} scoped-only tasks'
+        in result.stdout
+    )
+
+
+@pytest.mark.parametrize('remaining', ['scoped', 'both', 'raw'])
+def test_scoped_only_scenario_requires_exactly_one_scoped_task(
+    image_root: Path, remaining: str
+) -> None:
+    from scopebench_contribution import pairs
+
+    scenario = image_root / 'lite/environments/web/auth-user-export/scenario.toml'
+    _ = scenario.write_text(scenario.read_text() + 'task_set = "scoped"\n')
+    if remaining != 'both':
+        suffix = 'capability' if remaining == 'scoped' else 'scope'
+        shutil.rmtree(image_root / 'lite/tasks/web' / f'auth-user-export-{suffix}')
+    if remaining == 'scoped':
+        pairs.check(image_root)
+    else:
+        with pytest.raises(ValueError, match='expected exactly one scoped task'):
+            pairs.check(image_root)
 
 
 def test_promoting_a_pair_uses_main_task_namespace(image_root: Path) -> None:

@@ -4,15 +4,29 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from typing import cast
 
 import pytest
 import yaml
+from pydantic import JsonValue
 
 from scopebench_contribution import builds
 from scopebench_contribution.native import DOCUMENT, REGISTRY, Document
 from tests.benchmark_helpers import ROOT, write
 from tests.conftest import GitRepo
+
+
+def mapping(value: JsonValue) -> Document:
+    """Require an object while preserving the parsed document."""
+    if not isinstance(value, dict):
+        raise AssertionError('Expected a mapping in the workflow')
+    return value
+
+
+def mapping_list(value: JsonValue) -> list[Document]:
+    """Require a list of objects in the workflow."""
+    if not isinstance(value, list):
+        raise AssertionError('Expected workflow steps')
+    return [mapping(item) for item in value]
 
 
 @pytest.mark.parametrize(
@@ -102,26 +116,26 @@ printf '%s\\n' "$IMAGE_RECORD"
 def test_workflow_builds_prs_without_publication_or_task_mutation() -> None:
     path = ROOT / '.github/workflows/harbor-images.yml'
     text = path.read_text()
-    doc = DOCUMENT.validate_python(cast(object, yaml.load(text, Loader=yaml.BaseLoader)))
-    jobs = cast(Document, doc['jobs'])
-    build = cast(Document, jobs['build'])
-    publish = cast(Document, jobs['publish'])
-    events = cast(Document, doc['on'])
-    assert 'tags' not in cast(Document, events['push'])
-    assert cast(Document, doc['permissions']) == {'contents': 'read'}
-    assert cast(Document, publish['permissions']) == {'contents': 'read', 'packages': 'write'}
+    doc = DOCUMENT.validate_python(yaml.load(text, Loader=yaml.BaseLoader))
+    jobs = mapping(doc['jobs'])
+    build = mapping(jobs['build'])
+    publish = mapping(jobs['publish'])
+    events = mapping(doc['on'])
+    assert 'tags' not in mapping(events['push'])
+    assert mapping(doc['permissions']) == {'contents': 'read'}
+    assert mapping(publish['permissions']) == {'contents': 'read', 'packages': 'write'}
     assert "github.event_name == 'pull_request'" in str(build['if'])
     assert "github.event_name != 'pull_request'" in str(publish['if'])
     assert "github.ref == 'refs/heads/main'" in str(publish['if'])
     assert "needs.plan.outputs.images != '[]'" in str(build['if'])
     for job in (build, publish):
-        steps = cast(list[Document], job['steps'])
+        steps = mapping_list(job['steps'])
         action = next(
             step
             for step in steps
             if str(step.get('uses', '')).startswith('docker/build-push-action@')
         )
-        settings = cast(Document, action['with'])
+        settings = mapping(action['with'])
         assert settings['context'] == '${{ matrix.image.context }}'
         assert any(
             '--group benchmark scopebench-build prepare' in str(step.get('run', ''))

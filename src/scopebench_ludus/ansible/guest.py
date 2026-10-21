@@ -61,8 +61,10 @@ class Guest:
                 module=self.files.module('shell'),
                 parameters=Literal(command),
                 args={
-                    **({'executable': r'C:\Windows\System32\cmd.exe'} if self.windows else {}),
-                    **({'chdir': Literal(cwd)} if cwd else {}),
+                    'executable': r'C:\Windows\System32\cmd.exe' if self.windows else '/bin/bash',
+                    # Ansible otherwise starts Linux commands in its module scratch
+                    # directory and exposes that transport path as the agent's cwd.
+                    **({'chdir': Literal(cwd or '/tmp')} if not self.windows or cwd else {}),
                 },
                 environment={Literal(key): Literal(value) for key, value in (env or {}).items()},
                 register='scopebench_result',
@@ -79,7 +81,10 @@ class Guest:
             )
             await self.ansible.tasks(
                 [task, result_task('scopebench_result', output)],
-                timeout=timeout_sec if timeout_sec is not None else 300,
+                # Harbor owns the agent phase deadline; installed agents do not
+                # pass it through each environment.exec call. Keep this transport
+                # ceiling above the longest supported task agent timeout.
+                timeout=timeout_sec if timeout_sec is not None else 21600,
             )
             result = CommandResult.model_validate_json(output.read_bytes())
         return ProcessResult(stdout=result.stdout, stderr=result.stderr, return_code=result.rc)

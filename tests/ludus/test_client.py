@@ -176,3 +176,46 @@ def test_transport_errors_hide_secrets_and_do_not_retry_mutations() -> None:
 
     asyncio.run(exercise())
     assert calls == 1
+
+
+def test_testing_mode_requests_are_scoped_to_the_range() -> None:
+    calls: list[httpx.Request] = []
+
+    def request(item: httpx.Request) -> httpx.Response:
+        calls.append(item)
+        if item.url.path.endswith('/testing/allow'):
+            return httpx.Response(200, json={'allowed': ['api.anthropic.com'], 'errors': []})
+        return httpx.Response(201, json={'result': 'ok'})
+
+    async def exercise() -> None:
+        async with LudusClient(
+            'https://example.test', 'secret-key', transport=httpx.MockTransport(request)
+        ) as client:
+            await client.start_testing('TEST')
+            await client.allow_testing_domains('TEST', ['api.anthropic.com'])
+
+    asyncio.run(exercise())
+    assert [(r.method, r.url.path) for r in calls] == [
+        ('PUT', '/api/v2/testing/start'),
+        ('POST', '/api/v2/testing/allow'),
+    ]
+    assert all(r.url.params['rangeID'] == 'TEST' for r in calls)
+
+
+def test_testing_mode_tolerates_duplicate_certificate_domain_errors() -> None:
+    def request(_item: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                'allowed': ['api.anthropic.com'],
+                'errors': [{'item': 'ocsp.example.test', 'reason': 'already allowed'}],
+            },
+        )
+
+    async def exercise() -> None:
+        async with LudusClient(
+            'https://example.test', 'secret-key', transport=httpx.MockTransport(request)
+        ) as client:
+            await client.allow_testing_domains('TEST', ['api.anthropic.com'])
+
+    asyncio.run(exercise())

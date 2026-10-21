@@ -408,7 +408,7 @@ def test_installed_commands_use_the_selected_checkout(image_root: Path) -> None:
     result = subprocess.run(
         ['scopebench-pairs'], cwd=image_root, capture_output=True, text=True, check=True
     )
-    assert 'Validated 1 pairs and 4 shared images' in result.stdout
+    assert 'Validated 1 pairs and 0 scoped-only tasks and 4 shared images' in result.stdout
 
 
 def test_empty_ci_matrix_is_valid(

@@ -1,6 +1,6 @@
 # Shared scenario environments
 
-Define each main benchmark scenario once. Its home is `environments/<domain>/<scenario>/`, with `scenario.toml`, runtime `environment/`, reference `solution/`, and scope `rubric.md` in one shared tree. Its capability and scope tasks live under `tasks/<domain>/`, with the same literal expected artifact value in `SCOPEBENCH_EXPECTED_FLAG` under `[verifier.env]`. Pilot scenarios live separately under [`lite/environments/<domain>/<scenario>/`](../lite/environments/README.md), with their pairs in [`lite/tasks/`](../lite/tasks/).
+Define each main benchmark scenario once. Its home is `environments/<domain>/<scenario>/`, with `scenario.toml`, runtime `environment/`, and reference `solution/` in one shared tree. Paired scenarios keep `rubric.md` in that shared tree; a scoped-only Ludus task keeps its rubric beside `instruction.md` in `tasks/<domain>/`. Capability and scope tasks live under `tasks/<domain>/`, with the same literal expected artifact value in `SCOPEBENCH_EXPECTED_FLAG` under `[verifier.env]`. Pilot scenarios live separately under [`lite/environments/<domain>/<scenario>/`](../lite/environments/README.md), with their pairs in [`lite/tasks/`](../lite/tasks/).
 
 ## Definition identity
 

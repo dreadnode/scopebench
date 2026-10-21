@@ -5,7 +5,6 @@ from __future__ import annotations
 import copy
 import re
 from pathlib import Path
-from typing import cast
 
 from harbor.models.task.task import Task  # pyright: ignore[reportMissingTypeStubs]
 
@@ -17,9 +16,11 @@ from scopebench_ludus.config import read_config
 
 from .builds import sources
 from .native import (
+    DOCUMENT,
     MARKER,
     Compose,
     Document,
+    Metadata,
     TaskConfig,
     read_compose,
     scenarios,
@@ -60,12 +61,23 @@ def runtime_compose(scenario: Path, native: Compose) -> Compose:
 
 
 def check_canaries(root: Path) -> None:
-    """Keep shared solutions, rubrics, and verifier code marked as benchmark data."""
+    """Keep solutions, rubrics, and verifier code marked as benchmark data."""
     paths = {
         directory / name
         for directory in scenarios(root)
-        for name in ('solution/solve.sh', 'solution/solve.py', 'rubric.md')
+        for name in ('solution/solve.sh', 'solution/solve.py')
     }
+    for directory in scenarios(root):
+        definition = scenario_config(directory)
+        collection = collection_root(root, directory)
+        relative = directory.relative_to(collection / 'environments')
+        task_rubric = (
+            collection / 'tasks' / relative.parent / f'{relative.name}-scope' / 'rubric.md'
+        )
+        if definition.backend == 'ludus' and task_rubric.is_file():
+            paths.add(task_rubric)
+        else:
+            paths.add(directory / 'rubric.md')
     paths.update(
         path
         for directory in scenarios(root)
@@ -94,6 +106,35 @@ def check_network(compose: Compose, manifest: Path) -> None:
         for volume in volumes:
             if not isinstance(volume, str) or '/' in volume.split(':')[0] or volume.startswith('.'):
                 raise ValueError(f'Host bind mount in {manifest}')
+
+
+def verifier_files(manifest: Path, config: TaskConfig, meta: Metadata) -> set[str]:
+    """Accept an isolated task-local verifier only for a Ludus task."""
+    if config.verifier.environment is None:
+        raise ValueError(f'Expected a separate verifier environment: {manifest}')
+    image = config.verifier.environment.docker_image
+    if image is not None:
+        _ = version_tag(image)
+        return set()
+    if meta.backend != 'ludus':
+        raise ValueError(f'Expected a task-local verifier Dockerfile: {manifest}')
+    dockerfile = manifest.parent / 'tests/Dockerfile'
+    if dockerfile.read_text(encoding='utf-8').splitlines()[0] != (
+        'FROM --platform=linux/amd64 ghcr.io/dreadnode/scopebench:verifier-v6'
+    ):
+        raise ValueError(f'Expected the published verifier base: {dockerfile}')
+    files = {'tests/Dockerfile'}
+    if meta.scope == 'scoped':
+        specification = f'tests/specifications/{meta.benchmark}.json'
+        document = DOCUMENT.validate_json((manifest.parent / specification).read_bytes())
+        if document != {
+            'instruction': (manifest.parent / 'instruction.md').read_text(encoding='utf-8'),
+            'rubric': (manifest.parent / 'rubric.md').read_text(encoding='utf-8'),
+        }:
+            raise ValueError(f'Task-local verifier specification differs from source: {manifest}')
+        files.add(specification)
+        files.add('rubric.md')
+    return files
 
 
 def check_task(root: Path, manifest: Path, config: TaskConfig) -> None:
@@ -131,16 +172,18 @@ def check_task(root: Path, manifest: Path, config: TaskConfig) -> None:
         _ = version_tag(config.environment.docker_image)
     elif config.environment.docker_image is not None:
         raise ValueError(f'VM/cloud task declares a Docker agent image: {manifest}')
-    if config.verifier.environment is None:
-        raise ValueError(f'Expected a separate verifier environment: {manifest}')
-    _ = version_tag(config.verifier.environment.docker_image)
     if config.artifacts != ['/tmp/result.txt', '/logs/agent/trajectory.json']:
         raise ValueError(f'Incorrect submitted artifact: {manifest}')
     files = {
         p.relative_to(manifest.parent).as_posix() for p in manifest.parent.rglob('*') if p.is_file()
     }
     runtime_file = 'docker-compose.yaml' if meta.backend == 'docker' else 'reference.json'
-    if files != {'task.toml', 'instruction.md', f'environment/{runtime_file}'}:
+    expected_files = {'task.toml', 'instruction.md', f'environment/{runtime_file}'} | (
+        verifier_files(manifest, config, meta)
+    )
+    if meta.backend == 'ludus' and (manifest.parent / 'README.md').is_file():
+        expected_files.add('README.md')
+    if files != expected_files:
         raise ValueError(f'Unexpected task-local implementation files: {manifest}')
     if meta.backend != 'docker':
         if meta.backend == 'ludus':
@@ -157,13 +200,23 @@ def check_task(root: Path, manifest: Path, config: TaskConfig) -> None:
 def normalized_pair_member(data: Document) -> Document:
     """Remove task identity and the fields that differ between paired conditions."""
     normalized = copy.deepcopy(data)
-    del cast(Document, normalized['task'])['name']
+    task = normalized['task']
+    if not isinstance(task, dict):
+        raise ValueError('Task identity must be a mapping')
+    del task['name']
     # TaskConfig has already validated these nested mappings before normalization.
-    metadata = cast(Document, normalized['metadata'])
+    metadata = normalized['metadata']
+    if not isinstance(metadata, dict):
+        raise ValueError('Task metadata must be a mapping')
     del metadata['scope'], metadata['variant']
     _ = metadata.pop('source_variant', None)
-    verifier = cast(Document, normalized['verifier'])
-    del cast(Document, verifier['env'])['SCOPEBENCH_MODE']
+    verifier = normalized['verifier']
+    if not isinstance(verifier, dict):
+        raise ValueError('Task verifier must be a mapping')
+    env = verifier['env']
+    if not isinstance(env, dict):
+        raise ValueError('Verifier environment must be a mapping')
+    del env['SCOPEBENCH_MODE']
     return normalized
 
 
@@ -181,7 +234,13 @@ def check(root: Path) -> None:
         )
     if set(groups) != {p.relative_to(root).as_posix() for p in scenarios(root, None)}:
         raise ValueError('Scenario sources and task pairs differ')
+    scoped_only = 0
     for name, pair in groups.items():
+        if scenario_config(root / name).task_set == 'scoped':
+            if len(pair) != 1 or task_metadata(pair[0][1]).scope != 'scoped':
+                raise ValueError(f'{name}: expected exactly one scoped task')
+            scoped_only += 1
+            continue
         if len(pair) != 2 or {task_metadata(config).scope for _, config, _ in pair} != {
             'raw',
             'scoped',
@@ -197,7 +256,9 @@ def check(root: Path) -> None:
             != (pair[1][0].parent / 'environment' / runtime_file).read_bytes()
         ):
             raise ValueError(f'{name}: pair differs beyond instructions and scoring mode')
-    print(f'Validated {len(groups)} pairs and {len(sources(root))} shared images')
+    print(
+        f'Validated {len(groups) - scoped_only} pairs and {scoped_only} scoped-only tasks and {len(sources(root))} shared images'
+    )
 
 
 def main() -> int:

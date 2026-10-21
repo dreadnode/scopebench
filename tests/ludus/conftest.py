@@ -15,7 +15,12 @@ from harbor.models.task.config import (  # pyright: ignore[reportMissingTypeStub
 )
 from harbor.models.trial.paths import TrialPaths  # pyright: ignore[reportMissingTypeStubs]
 
-from scopebench_ludus import environment as runner, range as ranges, resources as ludus_resources
+from scopebench_ludus import (
+    cache,
+    environment as runner,
+    range as ranges,
+    resources as ludus_resources,
+)
 from scopebench_ludus.ansible import guest, playbook
 from tests.ludus.controller import Controller
 from tests.ludus_helpers import IMPORT_PATH, prepare_environment
@@ -28,6 +33,7 @@ def controller(monkeypatch: pytest.MonkeyPatch) -> Controller:
     monkeypatch.setattr(guest, 'run_process', fake.run)
     monkeypatch.setattr(ranges, 'LudusClient', fake.client)
     monkeypatch.setattr(ludus_resources, 'LudusClient', fake.client)
+    monkeypatch.setattr(cache, 'LudusClient', fake.client)
 
     def executable(_name: str) -> str:
         return '/fixture/bin'
